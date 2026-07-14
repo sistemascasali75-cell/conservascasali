@@ -1,0 +1,1 @@
+ALTER TABLE public.ventas_facturas ADD COLUMN IF NOT EXISTS prestamo boolean NOT NULL DEFAULT false;

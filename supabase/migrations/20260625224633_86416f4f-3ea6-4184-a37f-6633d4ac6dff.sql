@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.admin_editar_movimiento(uuid, public.tipo_mov_t, date, uuid, uuid, uuid, numeric, integer, integer, text, text, uuid, text, text, text, uuid, boolean);

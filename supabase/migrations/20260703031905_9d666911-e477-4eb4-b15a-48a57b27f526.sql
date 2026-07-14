@@ -1,0 +1,1 @@
+GRANT SELECT ON public.productos TO authenticated; GRANT SELECT, INSERT, UPDATE, DELETE ON public.productos TO service_role;

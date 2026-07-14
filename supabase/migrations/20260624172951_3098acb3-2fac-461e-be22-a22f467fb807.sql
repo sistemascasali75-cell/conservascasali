@@ -1,0 +1,1 @@
+ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS valor numeric(12,2);

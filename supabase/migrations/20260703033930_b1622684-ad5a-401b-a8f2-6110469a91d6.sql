@@ -1,0 +1,1 @@
+ALTER TABLE public.ventas_ordenes ADD COLUMN IF NOT EXISTS direccion_entrega text;

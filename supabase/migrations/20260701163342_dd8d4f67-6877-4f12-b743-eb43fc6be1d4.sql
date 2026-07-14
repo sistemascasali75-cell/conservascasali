@@ -1,0 +1,2 @@
+ALTER TABLE public.movimientos DROP CONSTRAINT IF EXISTS movimientos_cantidad_cajas_check;
+ALTER TABLE public.movimientos ADD CONSTRAINT movimientos_cantidad_cajas_check CHECK (cantidad_cajas IS NULL OR cantidad_cajas >= 0);

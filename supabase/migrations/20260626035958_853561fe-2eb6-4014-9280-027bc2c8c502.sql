@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.registrar_movimiento(tipo_mov_t, uuid, numeric, uuid, uuid, uuid, text, text, text, date, text, text, integer, integer, uuid, boolean, text) FROM anon, PUBLIC;
