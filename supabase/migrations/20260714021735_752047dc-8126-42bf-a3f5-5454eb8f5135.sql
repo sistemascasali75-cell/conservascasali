@@ -1,0 +1,19 @@
+
+SELECT set_config('app.bypass_movimientos_block','true', false);
+DELETE FROM public.user_roles;
+DELETE FROM public.insumos_movimientos;
+DELETE FROM public.movimientos;
+DELETE FROM public.inventario_conteo;
+DELETE FROM public.inventarios_fisicos;
+DELETE FROM public.ordenes_etiquetado;
+DELETE FROM public.warrants;
+DELETE FROM public.stock_lote_ubicacion;
+DELETE FROM public.lotes;
+DELETE FROM public.ubicaciones;
+DELETE FROM public.calidad_codigos;
+DELETE FROM public.insumos;
+DELETE FROM public.clientes_proveedores;
+DELETE FROM public.productos;
+DELETE FROM public.almacenes;
+DELETE FROM public.mercados;
+DELETE FROM public.estados;

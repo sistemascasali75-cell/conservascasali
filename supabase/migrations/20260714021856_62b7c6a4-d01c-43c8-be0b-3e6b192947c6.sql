@@ -1,0 +1,17 @@
+
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT 'e9104525-59ca-45ff-8e08-c082b98223af','a8b0665f-7a08-4c3a-99e8-ec7aefbdbbe1','ADMIN','2026-07-03T05:23:20.996179+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = 'a8b0665f-7a08-4c3a-99e8-ec7aefbdbbe1') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT '57e9e367-6d5f-4267-8ea1-8db1c107bdc7','34a9cfd6-e598-4f95-90a0-7a51eed3d46b','ADMIN','2026-07-03T05:26:03.685311+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = '34a9cfd6-e598-4f95-90a0-7a51eed3d46b') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT 'ee7ea59b-1b02-42db-a44e-e643a0fc9fa0','e1bca705-e339-4a6a-890e-342eaadc8ba8','ADMIN','2026-07-03T14:10:18.094731+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = 'e1bca705-e339-4a6a-890e-342eaadc8ba8') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT '71b751e1-0ca6-41dc-b3f7-9c9f3ccef6b6','f4584ae0-3fb1-4811-9b03-d771195987f3','VISITA','2026-07-05T17:23:23.8933+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = 'f4584ae0-3fb1-4811-9b03-d771195987f3') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT '6d7c9e97-f73d-408b-8a26-596adf23ecf2','12c3f788-a523-4a59-ac3d-2a9130c5b30d','VISITA','2026-07-05T17:23:30.042505+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = '12c3f788-a523-4a59-ac3d-2a9130c5b30d') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT '62f56534-7c4a-4706-8af7-5db6985e38a9','718a4c46-f86f-40a3-89cc-ebfcb9c55e6b','VISITA','2026-07-05T17:23:35.088218+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = '718a4c46-f86f-40a3-89cc-ebfcb9c55e6b') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT 'ff7c3885-65fb-4776-81b9-3d429ee9950c','49160256-9791-4a6b-aa08-e0aeb88ef143','INSUMOS','2026-07-08T16:51:31.621636+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = '49160256-9791-4a6b-aa08-e0aeb88ef143') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT '2e8c0416-44ed-414c-b801-2c32c8ff31ea','add696e0-5f19-45f6-88ea-180d377df525','INSUMOS','2026-07-10T16:02:41.304368+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = 'add696e0-5f19-45f6-88ea-180d377df525') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT '4c20c51f-f586-4cd0-8179-5f5d476ab648','124fc59c-2955-4d1e-a268-2f06446ced49','OPERADOR','2026-07-14T01:23:26.457139+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = '124fc59c-2955-4d1e-a268-2f06446ced49') ON CONFLICT (user_id, role) DO NOTHING;
+INSERT INTO public.user_roles ("id","user_id","role","created_at") SELECT 'bb5d1c4d-5911-47e6-a6f6-c17569c0ae7f','d8594f63-2b82-4b0a-9d86-bbc1874e63ee','OPERADOR','2026-07-14T01:29:25.150288+00:00' WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = 'd8594f63-2b82-4b0a-9d86-bbc1874e63ee') ON CONFLICT (user_id, role) DO NOTHING;
+
+-- Asegurar admin para sistemascasali75@gmail.com
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'ADMIN'::app_role FROM auth.users
+WHERE lower(email)='sistemascasali75@gmail.com' AND email_confirmed_at IS NOT NULL
+ON CONFLICT (user_id, role) DO NOTHING;
