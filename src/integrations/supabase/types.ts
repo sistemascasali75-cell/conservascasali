@@ -2005,6 +2005,13 @@ export type Database = {
         }
         Returns: string
       }
+      claim_role_with_password: {
+        Args: {
+          p_password: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       crear_inventario_fisico: {
         Args: { p_almacen: string; p_observacion?: string }
         Returns: string
