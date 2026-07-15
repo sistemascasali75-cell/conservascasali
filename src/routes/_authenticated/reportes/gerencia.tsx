@@ -40,6 +40,7 @@ function ReporteGerencia() {
   const [fAlmacen, setFAlmacen] = useState(ALL);
   const [fEstado, setFEstado] = useState(ALL);
   const [fMercado, setFMercado] = useState(ALL);
+  const [fTamano, setFTamano] = useState(ALL);
   const [fEtiqueta, setFEtiqueta] = useState<"all" | "si" | "no">("all");
   const [fVenc, setFVenc] = useState<"all" | "vencido" | "7" | "30" | "90" | "vigente">("all");
   const [fTipos, setFTipos] = useState<Set<string>>(new Set(TIPOS_DEFAULT));
@@ -63,7 +64,7 @@ function ReporteGerencia() {
         supabase.from("ubicaciones").select("*"),
         supabase.from("lotes").select("*"),
         supabase.from("stock_lote_ubicacion").select("*"),
-        supabase.from("movimientos").select("lote_id, tipo, cantidad_cajas, latas, empaque, ubicacion_origen_id, ubicacion_destino_id, mercado_id, tiene_etiqueta"),
+        supabase.from("movimientos").select("lote_id, tipo, cantidad_cajas, latas, empaque, ubicacion_origen_id, ubicacion_destino_id, mercado_id, tiene_etiqueta, tamano, created_at"),
         supabase.from("mercados" as any).select("id, mercado, nivel"),
       ]);
       return {
@@ -91,6 +92,7 @@ function ReporteGerencia() {
     const empaquePorLote = new Map<string, number>(); // último empaque no nulo visto
     const etiquetaPorLote = new Map<string, boolean>();
     const mercadoPorLote = new Map<string, string | null>();
+    const tamanoPorLote = new Map<string, string>();
     data.movs.forEach((mv: any) => {
       // El empaque se captura de cualquier movimiento, sin filtrar por tipo,
       // para mantener consistencia con Kardex incluso cuando se ocultan tipos.
@@ -108,6 +110,7 @@ function ReporteGerencia() {
         const nom = (data.mercados.find((mc: any) => mc.id === mv.mercado_id) as any)?.mercado;
         if (nom) mercadoPorLote.set(mv.lote_id, nom);
       }
+      if (mv.tamano) tamanoPorLote.set(mv.lote_id, String(mv.tamano));
     });
 
     type Row = {
@@ -133,6 +136,7 @@ function ReporteGerencia() {
       diasVenc: number;
       valorUnit: number;
       valorTotal: number;
+      tamano: string;
     };
 
     const rows: Row[] = [];
@@ -172,6 +176,7 @@ function ReporteGerencia() {
         diasVenc: daysUntil(lote.fecha_vencimiento),
         valorUnit,
         valorTotal: valorUnit * (totalLatas / empaque),
+        tamano: tamanoPorLote.get(lote.id) ?? "",
       });
     });
 
@@ -184,8 +189,9 @@ function ReporteGerencia() {
       ...data.mercados.map((m: any) => m.mercado),
       ...rows.map((r) => r.mercado).filter((m) => m && m !== "—"),
     ])).sort();
+    const tamanos = Array.from(new Set(rows.map((r) => r.tamano).filter((t) => t))).sort();
 
-    return { rows, especies, envases, estados, mercadosNombre, cajasNetasLote, latasNetasLote, empaquePorLote };
+    return { rows, especies, envases, estados, mercadosNombre, tamanos, cajasNetasLote, latasNetasLote, empaquePorLote };
   }, [data, fTipos]);
 
   const filtradas = useMemo(() => {
@@ -197,6 +203,7 @@ function ReporteGerencia() {
       if (fAlmacen !== ALL && r.almacenId !== fAlmacen) return false;
       if (fEstado !== ALL && r.estado !== fEstado) return false;
       if (fMercado !== ALL && r.mercado !== fMercado) return false;
+      if (fTamano !== ALL && (r.tamano || "") !== fTamano) return false;
       if (fEtiqueta === "si" && !r.tieneEtiqueta) return false;
       if (fEtiqueta === "no" && r.tieneEtiqueta) return false;
 
@@ -207,12 +214,12 @@ function ReporteGerencia() {
       if (fVenc === "vigente" && r.diasVenc < 90) return false;
       if (search.trim()) {
         const q = search.trim().toLowerCase();
-        const hay = `${r.codigoLote} ${r.producto} ${r.especie} ${r.envase} ${r.almacen} ${r.ubicacion} ${r.mercado} ${r.estado}`.toLowerCase();
+        const hay = `${r.codigoLote} ${r.producto} ${r.especie} ${r.envase} ${r.almacen} ${r.ubicacion} ${r.mercado} ${r.estado} ${r.tamano}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [computed, fProducto, fEspecie, fEnvase, fAlmacen, fEstado, fMercado, fEtiqueta, fVenc, search]);
+  }, [computed, fProducto, fEspecie, fEnvase, fAlmacen, fEstado, fMercado, fTamano, fEtiqueta, fVenc, search]);
 
   const totals = useMemo(() => {
     const totCajas = filtradas.reduce((s, r) => s + r.cajas, 0);
@@ -253,7 +260,7 @@ function ReporteGerencia() {
 
   const clearFilters = () => {
     setFProducto(ALL); setFEspecie(ALL); setFEnvase(ALL); setFAlmacen(ALL);
-    setFEstado(ALL); setFMercado(ALL); setFEtiqueta("all"); setFVenc("all"); setSearch("");
+    setFEstado(ALL); setFMercado(ALL); setFTamano(ALL); setFEtiqueta("all"); setFVenc("all"); setSearch("");
     setFTipos(new Set(TIPOS_DEFAULT));
   };
 
@@ -267,9 +274,9 @@ function ReporteGerencia() {
   const groupedHeaders = ["Agrupado por", "Sub", "Lotes", "Ubic.", "Cajas", "Latas sueltas", "Inventario (latas)", "Valor (S/.)"];
   const groupedRows = () => grouped.map((g) => [g.label, g.sub, g.lotes.size, g.ubicaciones.size, g.cajas, g.latas, g.totalLatas, g.valor.toFixed(2)]);
 
-  const detalleHeaders = ["Lote", "Producto", "Especie", "Envase", "Estado", "Etiqueta", "Mercado", "Almacén", "Ubicación", "Cajas", "Empaque", "Latas sueltas", "Inventario (latas)", "FP", "FV", "Días Venc.", "Valor unit. (S/.)", "Valor total (S/.)"];
+  const detalleHeaders = ["Lote", "Producto", "Especie", "Envase", "Tamaño", "Estado", "Etiqueta", "Mercado", "Almacén", "Ubicación", "Cajas", "Empaque", "Latas sueltas", "Inventario (latas)", "FP", "FV", "Días Venc.", "Valor unit. (S/.)", "Valor total (S/.)"];
   const detalleRows = () => filtradas.map((r) => [
-    r.codigoLote, r.producto, r.especie, r.envase, r.estado, r.etiqueta, r.mercado,
+    r.codigoLote, r.producto, r.especie, r.envase, r.tamano || "—", r.estado, r.etiqueta, r.mercado,
     r.almacen, r.ubicacion, r.cajas, r.empaque, r.latas, r.totalLatas, r.fp, r.fv, r.diasVenc,
     r.valorUnit.toFixed(2), r.valorTotal.toFixed(2),
   ]);
@@ -415,6 +422,9 @@ function ReporteGerencia() {
           <FSelect value={fMercado} onChange={setFMercado} placeholder="Mercado">
             {(computed?.mercadosNombre ?? []).map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
           </FSelect>
+          <FSelect value={fTamano} onChange={setFTamano} placeholder="Tamaño">
+            {(computed?.tamanos ?? []).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+          </FSelect>
           <Select value={fEtiqueta} onValueChange={(v: any) => setFEtiqueta(v)}>
             <SelectTrigger className="h-9"><SelectValue placeholder="Etiqueta" /></SelectTrigger>
             <SelectContent>
@@ -506,6 +516,7 @@ function ReporteGerencia() {
                 <TableHead>Lote</TableHead>
                 <TableHead>Producto</TableHead>
                 <TableHead>Envase</TableHead>
+                <TableHead>Tamaño</TableHead>
                 <TableHead>Almacén</TableHead>
                 <TableHead>Ubic.</TableHead>
                 <TableHead>Estado</TableHead>
@@ -525,6 +536,7 @@ function ReporteGerencia() {
                   <TableCell className="font-mono text-xs whitespace-nowrap">{r.codigoLote}</TableCell>
                   <TableCell className="text-xs">{r.producto}</TableCell>
                   <TableCell className="text-xs">{r.envase}</TableCell>
+                  <TableCell className="text-xs">{r.tamano || "—"}</TableCell>
                   <TableCell className="text-xs">{r.almacen}</TableCell>
                   <TableCell className="font-mono text-xs">{r.ubicacion}</TableCell>
                   <TableCell><Badge variant="secondary" className="text-[10px]">{r.estado}</Badge></TableCell>

@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { HistorialMovimientos } from "@/components/historial-movimientos";
 import { decodeCodigo } from "@/lib/codigo-producto";
 import { LatasInput, splitLatas } from "@/components/latas-input";
+import { TamanoSelect } from "@/components/tamano-select";
+import { defaultTamano } from "@/lib/tamano";
 
 export const Route = createFileRoute("/_authenticated/entrada")({
   component: EntradaPage,
@@ -46,6 +48,7 @@ function EntradaPage() {
   const [mercadoId, setMercadoId] = useState<string>("");
   const [tercero, setTercero] = useState("");
   const [empaque24, setEmpaque24] = useState(false);
+  const [tamano, setTamano] = useState("");
   const [saving, setSaving] = useState(false);
   const [loteExistente, setLoteExistente] = useState<{ id: string; estado: string } | null>(null);
   const empaqueVal = empaque24 ? 24 : 48;
@@ -95,6 +98,13 @@ function EntradaPage() {
     () => (cat?.ubicaciones ?? []).filter((u) => u.almacen_id === almId),
     [cat, almId],
   );
+
+  const productoSel = useMemo(
+    () => (cat?.productos ?? []).find((p: any) => p.id === productoId) as any,
+    [cat, productoId],
+  );
+  const envaseSel: string = productoSel?.envase ?? "";
+  useEffect(() => { setTamano(defaultTamano(envaseSel)); /* eslint-disable-next-line */ }, [envaseSel]);
 
   const productoOptions = useMemo<SearchSelectOption[]>(() => {
     return (cat?.productos ?? []).map((p: any) => {
@@ -211,13 +221,14 @@ function EntradaPage() {
           p_tiene_etiqueta: tieneEtiqueta,
           p_tercero: tercero || undefined,
           p_empaque: empaqueVal,
+          p_tamano: tamano || undefined,
         } as any);
         if (movErr) throw movErr;
         toast.success("Entrada registrada");
       } else {
         toast.success("Lote registrado (sin movimiento de latas)");
       }
-      setTotalLatas(""); setPiso(""); setNroGuia(""); setNroWarrant(""); setTieneWarrant(false); setIniciaWarrant(""); setVenceWarrant(""); setTieneEtiqueta(false); setObservaciones(""); setMercadoId(""); setTercero(""); setEmpaque24(false);
+      setTotalLatas(""); setPiso(""); setNroGuia(""); setNroWarrant(""); setTieneWarrant(false); setIniciaWarrant(""); setVenceWarrant(""); setTieneEtiqueta(false); setObservaciones(""); setMercadoId(""); setTercero(""); setEmpaque24(false); setTamano(defaultTamano(envaseSel));
       qc.invalidateQueries();
     } catch (e: any) {
       console.error("[entrada] error", e);
@@ -272,6 +283,9 @@ function EntradaPage() {
                 <Checkbox checked={empaque24} onCheckedChange={(v) => setEmpaque24(!!v)} />
                 <span className="text-sm">Empaque ×24 (desmarcar = ×48)</span>
               </label>
+            </Field>
+            <Field label="Tamaño" hint={envaseSel ? `Envase: ${envaseSel}` : "Definido por el envase del producto"}>
+              <TamanoSelect envase={envaseSel} value={tamano} onChange={setTamano} />
             </Field>
             <Field label="Piso" hint="1 o 2 (nivel del carril)">
               <Select value={piso} onValueChange={setPiso}>

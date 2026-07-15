@@ -21,6 +21,8 @@ import { LoteSnapshotPanel } from "@/components/lote-snapshot-panel";
 import { SearchSelect, type SearchSelectOption } from "@/components/ui/search-select";
 import { decodeCodigo } from "@/lib/codigo-producto";
 import { LatasInput, LatasDisplay, splitLatas } from "@/components/latas-input";
+import { TamanoSelect } from "@/components/tamano-select";
+import { defaultTamano } from "@/lib/tamano";
 
 export const Route = createFileRoute("/_authenticated/salida")({
   component: SalidaPage,
@@ -46,6 +48,7 @@ function SalidaPage() {
   const [donacion, setDonacion] = useState(false);
   const [autorizado, setAutorizado] = useState<string>("");
   const [autorizadoOtro, setAutorizadoOtro] = useState<string>("");
+  const [tamano, setTamano] = useState("");
   const [saving, setSaving] = useState(false);
   const limaToday = () => new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" })).toISOString().slice(0, 10);
   const [fecha, setFecha] = useState<string>(limaToday());
@@ -104,6 +107,10 @@ function SalidaPage() {
 
   useEffect(() => { if (nroWarrant.trim()) setTieneWarrant(true); }, [nroWarrant]);
   useEffect(() => { setTieneWarrant(warrantsActivos > 0); }, [warrantsActivos]);
+
+  const productoSel = useMemo(() => (cat?.productos ?? []).find((p: any) => p.id === productoId) as any, [cat, productoId]);
+  const envaseSel: string = productoSel?.envase ?? "";
+  useEffect(() => { setTamano(defaultTamano(envaseSel)); /* eslint-disable-next-line */ }, [envaseSel]);
 
   const ubicacionesLote = useMemo(() => {
     if (!loteId) return [];
@@ -207,11 +214,12 @@ function SalidaPage() {
         p_empaque: empaqueVal,
         p_donacion: donacion,
         p_autorizado: autorizadoFinal || undefined,
+        p_tamano: tamano || undefined,
       } as any);
       if (error) throw error;
       toast.success("Salida registrada");
       setTotalLatas(""); setNroGuia(""); setNroVale(""); setNroWarrant(""); setTieneEtiqueta(false); setObservaciones(""); setTercero(""); setFecha(limaToday());
-      setEmpaque24(false); setDonacion(false); setAutorizado(""); setAutorizadoOtro("");
+      setEmpaque24(false); setDonacion(false); setAutorizado(""); setAutorizadoOtro(""); setTamano(defaultTamano(envaseSel));
       qc.invalidateQueries();
     } catch (e: any) {
       toast.error(e.message ?? "Error al registrar salida");
@@ -301,6 +309,9 @@ function SalidaPage() {
                 <Checkbox checked={empaque24} onCheckedChange={(v) => setEmpaque24(!!v)} />
                 <span className="text-sm">Empaque ×24 (desmarcar = ×48)</span>
               </label>
+            </Field>
+            <Field label="Tamaño" hint={envaseSel ? `Envase: ${envaseSel}` : "Definido por el envase del producto"}>
+              <TamanoSelect envase={envaseSel} value={tamano} onChange={setTamano} />
             </Field>
             <Field label="Cliente">
               <SearchSelect
