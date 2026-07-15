@@ -71,7 +71,7 @@ function AuthPage() {
     }
   };
 
-  const handleRoleSubmit = (e: React.FormEvent) => {
+  const handleRoleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cfg = ROLE_PASSWORDS[role];
     if (!cfg) return;
@@ -79,12 +79,24 @@ function AuthPage() {
       toast.error("Contraseña de rol incorrecta");
       return;
     }
-    sessionStorage.setItem(
-      ROLE_SESSION_KEY,
-      JSON.stringify({ role, ts: Date.now() }),
-    );
-    toast.success(`Bienvenido, ${cfg.label}`);
-    navigate({ to: "/" });
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc("claim_role_with_password", {
+        p_role: role as any,
+        p_password: password.trim(),
+      });
+      if (error) throw error;
+      sessionStorage.setItem(
+        ROLE_SESSION_KEY,
+        JSON.stringify({ role, ts: Date.now() }),
+      );
+      toast.success(`Bienvenido, ${cfg.label}`);
+      navigate({ to: "/" });
+    } catch (err: any) {
+      toast.error(err.message ?? "No se pudo asignar el rol");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignOut = async () => {
