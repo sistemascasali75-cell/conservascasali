@@ -274,9 +274,9 @@ function ReporteGerencia() {
   const groupedHeaders = ["Agrupado por", "Sub", "Lotes", "Ubic.", "Cajas", "Latas sueltas", "Inventario (latas)", "Valor (S/.)"];
   const groupedRows = () => grouped.map((g) => [g.label, g.sub, g.lotes.size, g.ubicaciones.size, g.cajas, g.latas, g.totalLatas, g.valor.toFixed(2)]);
 
-  const detalleHeaders = ["Lote", "Producto", "Especie", "Envase", "Estado", "Etiqueta", "Mercado", "Almacén", "Ubicación", "Cajas", "Empaque", "Latas sueltas", "Inventario (latas)", "FP", "FV", "Días Venc.", "Valor unit. (S/.)", "Valor total (S/.)"];
+  const detalleHeaders = ["Lote", "Producto", "Especie", "Envase", "Tamaño", "Estado", "Etiqueta", "Mercado", "Almacén", "Ubicación", "Cajas", "Empaque", "Latas sueltas", "Inventario (latas)", "FP", "FV", "Días Venc.", "Valor unit. (S/.)", "Valor total (S/.)"];
   const detalleRows = () => filtradas.map((r) => [
-    r.codigoLote, r.producto, r.especie, r.envase, r.estado, r.etiqueta, r.mercado,
+    r.codigoLote, r.producto, r.especie, r.envase, r.tamano || "—", r.estado, r.etiqueta, r.mercado,
     r.almacen, r.ubicacion, r.cajas, r.empaque, r.latas, r.totalLatas, r.fp, r.fv, r.diasVenc,
     r.valorUnit.toFixed(2), r.valorTotal.toFixed(2),
   ]);
