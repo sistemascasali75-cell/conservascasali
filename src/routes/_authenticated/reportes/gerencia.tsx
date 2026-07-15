@@ -516,6 +516,7 @@ function ReporteGerencia() {
                 <TableHead>Lote</TableHead>
                 <TableHead>Producto</TableHead>
                 <TableHead>Envase</TableHead>
+                <TableHead>Tamaño</TableHead>
                 <TableHead>Almacén</TableHead>
                 <TableHead>Ubic.</TableHead>
                 <TableHead>Estado</TableHead>
@@ -535,6 +536,7 @@ function ReporteGerencia() {
                   <TableCell className="font-mono text-xs whitespace-nowrap">{r.codigoLote}</TableCell>
                   <TableCell className="text-xs">{r.producto}</TableCell>
                   <TableCell className="text-xs">{r.envase}</TableCell>
+                  <TableCell className="text-xs">{r.tamano || "—"}</TableCell>
                   <TableCell className="text-xs">{r.almacen}</TableCell>
                   <TableCell className="font-mono text-xs">{r.ubicacion}</TableCell>
                   <TableCell><Badge variant="secondary" className="text-[10px]">{r.estado}</Badge></TableCell>
