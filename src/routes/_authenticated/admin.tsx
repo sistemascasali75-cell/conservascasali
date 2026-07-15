@@ -590,6 +590,8 @@ function CatalogManager({
         let v = payload[f.key];
         if (v === "" || v === undefined) v = null;
         if (f.type === "number" && v !== null) v = Number(v);
+        // Omitir nulos en INSERT para respetar defaults/triggers de la BD.
+        if (isNew && v === null) return;
         clean[f.key] = v;
       });
       if (isNew) {
@@ -607,6 +609,7 @@ function CatalogManager({
     },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const delMut = useMutation({
     mutationFn: async (row: any) => {
