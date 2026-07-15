@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.admin_editar_movimiento(uuid, tipo_mov_t, date, uuid, uuid, uuid, numeric, integer, integer, text, text, uuid, text, text, text, uuid, boolean, text, integer, boolean, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_editar_movimiento(uuid, tipo_mov_t, date, uuid, uuid, uuid, numeric, integer, integer, text, text, uuid, text, text, text, uuid, boolean, text, integer, boolean, text, text) TO authenticated;
