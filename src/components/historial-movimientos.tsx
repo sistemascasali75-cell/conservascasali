@@ -18,6 +18,7 @@ import { Pencil, Check, X, FileDown } from "lucide-react";
 import { formatDate, formatNumber } from "@/lib/format";
 import { toast } from "sonner";
 import { LatasInput } from "@/components/latas-input";
+import { TamanoSelect } from "@/components/tamano-select";
 
 type TipoMov = "ENTRADA" | "SALIDA" | "TRASLADO" | "MERMA" | "AJUSTE_POSITIVO" | "AJUSTE_NEGATIVO" | "CAMBIO";
 
@@ -123,6 +124,7 @@ export function HistorialMovimientos({ tipo, title = "Historial de registros", l
         TieneEtiqueta: m.tiene_etiqueta ? "Sí" : "No",
         Mercado: data.mercadoById.get(m.mercado_id) ?? "",
         Certificación: m.certificacion ?? "",
+        Tamaño: m.tamano ?? "",
         Estado: m.estado_lote ?? "",
         Observaciones: m.observaciones ?? "",
         Motivo: m.motivo ?? "",
@@ -180,6 +182,7 @@ export function HistorialMovimientos({ tipo, title = "Historial de registros", l
               <TableHead className="text-center">Warrant</TableHead>
               <TableHead className="text-center">Etiqueta</TableHead>
               <TableHead>Mercado</TableHead>
+              <TableHead>Tamaño</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Observaciones</TableHead>
               {isAdmin && <TableHead className="text-right">Acción</TableHead>}
@@ -187,10 +190,10 @@ export function HistorialMovimientos({ tipo, title = "Historial de registros", l
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={17} className="text-center text-muted-foreground py-8">Cargando…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={18} className="text-center text-muted-foreground py-8">Cargando…</TableCell></TableRow>
             )}
             {!isLoading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={17} className="text-center text-muted-foreground py-8">Sin movimientos</TableCell></TableRow>
+              <TableRow><TableCell colSpan={18} className="text-center text-muted-foreground py-8">Sin movimientos</TableCell></TableRow>
             )}
             {filtered.map((m: any) => {
               const lote = data?.loteById.get(m.lote_id);
@@ -222,6 +225,7 @@ export function HistorialMovimientos({ tipo, title = "Historial de registros", l
                     <BoolMark on={m.tiene_etiqueta} hint={m.etiqueta} />
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{(data?.mercadoById.get(m.mercado_id) as string) ?? "—"}</Badge></TableCell>
+                  <TableCell className="text-xs">{m.tamano ?? "—"}</TableCell>
                   <TableCell><Badge variant="secondary" className="text-xs">{m.estado_lote ?? "—"}</Badge></TableCell>
                   <TableCell className="text-xs max-w-[220px] truncate" title={m.observaciones}>{m.observaciones ?? "—"}</TableCell>
                   {isAdmin && (
@@ -269,6 +273,7 @@ function EditDialog({ mov, onClose, onSaved }: { mov: any; onClose: () => void; 
   const [observaciones, setObs] = useState(mov.observaciones ?? "");
   const [nroWarrant, setNroW] = useState(mov.nro_warrant ?? "");
   const [tercero, setTercero] = useState(mov.tercero ?? "");
+  const [tamano, setTamano] = useState(mov.tamano ?? "");
   const initTotal = mov.total_latas != null
     ? Number(mov.total_latas)
     : Number(mov.cantidad_cajas || 0) * Number(mov.empaque || 48) + Number(mov.latas || 0);
@@ -295,6 +300,7 @@ function EditDialog({ mov, onClose, onSaved }: { mov: any; onClose: () => void; 
         p_nro_warrant: nroWarrant || null,
         p_tercero: tercero || null,
         p_empaque: empaqueVal,
+        p_tamano: tamano || null,
       } as any);
       if (error) throw error;
       onSaved();
@@ -321,6 +327,7 @@ function EditDialog({ mov, onClose, onSaved }: { mov: any; onClose: () => void; 
           <div className="space-y-1.5"><Label>N° Vale</Label><Input value={vale} onChange={(e) => setVale(e.target.value)} /></div>
           <div className="space-y-1.5"><Label>N° Warrant</Label><Input value={nroWarrant} onChange={(e) => setNroW(e.target.value)} /></div>
           <div className="col-span-2 space-y-1.5"><Label>Tercero</Label><Input value={tercero} onChange={(e) => setTercero(e.target.value)} placeholder="Nombre del tercero / transportista" /></div>
+          <div className="col-span-2 space-y-1.5"><Label>Tamaño</Label><TamanoSelect value={tamano} onChange={setTamano} autoDefault={false} /></div>
           <div className="col-span-2 space-y-1.5"><Label>Motivo</Label><Input value={motivo} onChange={(e) => setMotivo(e.target.value)} /></div>
           <div className="col-span-2 space-y-1.5"><Label>Observaciones</Label><Textarea rows={3} value={observaciones} onChange={(e) => setObs(e.target.value)} /></div>
         </div>

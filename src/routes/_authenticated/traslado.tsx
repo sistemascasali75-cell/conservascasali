@@ -18,6 +18,8 @@ import { HistorialMovimientos } from "@/components/historial-movimientos";
 import { LoteSnapshotPanel } from "@/components/lote-snapshot-panel";
 import { SearchSelect, type SearchSelectOption } from "@/components/ui/search-select";
 import { LatasInput, LatasDisplay, splitLatas } from "@/components/latas-input";
+import { TamanoSelect } from "@/components/tamano-select";
+import { defaultTamano } from "@/lib/tamano";
 
 export const Route = createFileRoute("/_authenticated/traslado")({
   component: TrasladoPage,
@@ -88,6 +90,7 @@ function TrasladoForm() {
   const [tieneEtiqueta, setTieneEtiqueta] = useState(false);
   const [observaciones, setObservaciones] = useState("");
   const [empaque24, setEmpaque24] = useState(false);
+  const [tamano, setTamano] = useState("");
   const [saving, setSaving] = useState(false);
   const empaqueVal = empaque24 ? 24 : 48;
 
@@ -167,6 +170,9 @@ function TrasladoForm() {
 
   useEffect(() => { setOrigenId(""); setDestId(""); }, [loteId]);
 
+  const envaseSel: string = (loteSel ? (prodById.get(loteSel.producto_id) as any)?.envase : "") ?? "";
+  useEffect(() => { setTamano(defaultTamano(envaseSel)); /* eslint-disable-next-line */ }, [envaseSel]);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loteId || !origenId || !destId) { toast.error("Completa lote, origen y destino"); return; }
@@ -186,10 +192,11 @@ function TrasladoForm() {
         p_total_latas: totalLatasNum,
         p_tercero: tercero || undefined,
         p_empaque: empaqueVal,
+        p_tamano: tamano || undefined,
       } as any);
       if (error) throw error;
       toast.success("Traslado registrado");
-      setTotalLatas(""); setTercero(""); setTieneEtiqueta(false); setObservaciones(""); setEmpaque24(false);
+      setTotalLatas(""); setTercero(""); setTieneEtiqueta(false); setObservaciones(""); setEmpaque24(false); setTamano(defaultTamano(envaseSel));
       qc.invalidateQueries();
     } catch (e: any) { toast.error(e.message ?? "Error en traslado"); }
     finally { setSaving(false); }
@@ -254,6 +261,9 @@ function TrasladoForm() {
               <Checkbox checked={empaque24} onCheckedChange={(v) => setEmpaque24(!!v)} />
               <span className="text-sm">Empaque ×24 (desmarcar = ×48)</span>
             </label>
+          </Field>
+          <Field label="Tamaño" hint={envaseSel ? `Envase: ${envaseSel}` : "Definido por el envase del producto"}>
+            <TamanoSelect envase={envaseSel} value={tamano} onChange={setTamano} />
           </Field>
           <Field label="Tercero" hint="Transportista / contacto externo">
             <Input value={tercero} onChange={(e) => setTercero(e.target.value)} className="h-11" placeholder="Nombre del tercero" />

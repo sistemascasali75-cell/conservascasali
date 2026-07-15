@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatNumber, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { LatasInput, LatasDisplay, splitLatas } from "@/components/latas-input";
+import { TamanoSelect } from "@/components/tamano-select";
+import { defaultTamano } from "@/lib/tamano";
 
 export const Route = createFileRoute("/_authenticated/mermas")({
   component: MermasPage,
@@ -68,6 +70,7 @@ function RegistrarForm() {
   const [tercero, setTercero] = useState("");
   const [detalle, setDetalle] = useState("");
   const [empaque24, setEmpaque24] = useState(false);
+  const [tamano, setTamano] = useState("");
   const [saving, setSaving] = useState(false);
   const empaqueVal = empaque24 ? 24 : 48;
 
@@ -138,6 +141,9 @@ function RegistrarForm() {
     }));
   }, [opcionesUbic]);
 
+  const loteSelMerma = useMemo(() => (data?.lotes ?? []).find((l: any) => l.id === loteId), [data, loteId]);
+  const envaseSel: string = ((loteSelMerma ? (prodById.get((loteSelMerma as any).producto_id) as any)?.envase : "") ?? "") as string;
+  useEffect(() => { setTamano(defaultTamano(envaseSel)); /* eslint-disable-next-line */ }, [envaseSel]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,13 +161,14 @@ function RegistrarForm() {
         p_total_latas: totalLatasNum,
         p_tercero: tercero || undefined,
         p_empaque: empaqueVal,
+        p_tamano: tamano || undefined,
       };
       if (tipo === "AJUSTE_POSITIVO") params.p_ubic_destino = ubicId;
       else params.p_ubic_origen = ubicId;
       const { error } = await supabase.rpc("registrar_movimiento", params);
       if (error) throw error;
       toast.success("Movimiento registrado");
-      setTotalLatas(""); setDetalle(""); setMotivo(""); setTieneEtiqueta(false); setUbicId(""); setTercero(""); setEmpaque24(false);
+      setTotalLatas(""); setDetalle(""); setMotivo(""); setTieneEtiqueta(false); setUbicId(""); setTercero(""); setEmpaque24(false); setTamano(defaultTamano(envaseSel));
       qc.invalidateQueries();
     } catch (e: any) {
       toast.error(e.message ?? "Error al registrar");
@@ -239,6 +246,10 @@ function RegistrarForm() {
             <Checkbox checked={empaque24} onCheckedChange={(v) => setEmpaque24(!!v)} />
             <span className="text-sm">Empaque ×24 (desmarcar = ×48)</span>
           </label>
+        </div>
+        <div className="space-y-2">
+          <Label>Tamaño <span className="text-xs text-muted-foreground font-normal ml-2">{envaseSel ? `Envase: ${envaseSel}` : "Definido por el envase"}</span></Label>
+          <TamanoSelect envase={envaseSel} value={tamano} onChange={setTamano} />
         </div>
         <div className="md:col-span-2 space-y-2">
           <Label>Tercero <span className="text-xs text-muted-foreground font-normal ml-2">Transportista / contacto externo</span></Label>
