@@ -18,9 +18,10 @@ import { formatNumber } from "@/lib/format";
 import { exportPDF, exportXLSX } from "@/lib/export";
 import {
   Plus, Trash2, FileSpreadsheet, FileText, Factory, Eye, Search,
-  Package, AlertTriangle, TrendingDown, ClipboardList, Link2,
+  Package, AlertTriangle, TrendingDown, ClipboardList, History,
 } from "lucide-react";
 import { useRoles } from "@/hooks/use-role";
+import { SearchSelect } from "@/components/ui/search-select";
 
 export const Route = createFileRoute("/_authenticated/lance-produccion")({
   component: LanceProduccionPage,
