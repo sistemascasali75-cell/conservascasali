@@ -74,6 +74,7 @@ const items: Item[] = [
   { to: "/certificacion", label: "Certificación", icon: ShieldCheck, section: "Operaciones", operador: true },
   { to: "/mermas", label: "Mermas y Ajustes", icon: AlertTriangle, section: "Operaciones", roles: ["ADMIN", "OPERADOR"], operador: true },
   { to: "/inventario-fisico", label: "Toma de inventario", icon: ClipboardList, section: "Operaciones", operador: true },
+  { to: "/lance-produccion", label: "Lance de Producción", icon: Factory, section: "Operaciones", operador: true },
 
   { to: "/insumos", label: "Stock de insumos", icon: Boxes, section: "Insumos" },
   { to: "/insumos/mapa", label: "Mapa de insumos", icon: Grid3x3, section: "Insumos" },
