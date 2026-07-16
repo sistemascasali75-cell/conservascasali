@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Package,
   ArrowDownToLine,
+  Factory,
   ArrowUpFromLine,
   Shuffle,
   Settings,
