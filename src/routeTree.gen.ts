@@ -18,6 +18,7 @@ import { Route as AuthenticatedTrasladoRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSalidaRouteImport } from './routes/_authenticated/salida'
 import { Route as AuthenticatedMermasRouteImport } from './routes/_authenticated/mermas'
 import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
+import { Route as AuthenticatedLanceProduccionRouteImport } from './routes/_authenticated/lance-produccion'
 import { Route as AuthenticatedKardexRouteImport } from './routes/_authenticated/kardex'
 import { Route as AuthenticatedInventarioFisicoRouteImport } from './routes/_authenticated/inventario-fisico'
 import { Route as AuthenticatedInventarioRouteImport } from './routes/_authenticated/inventario'
@@ -95,6 +96,12 @@ const AuthenticatedMapaRoute = AuthenticatedMapaRouteImport.update({
   path: '/mapa',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLanceProduccionRoute =
+  AuthenticatedLanceProduccionRouteImport.update({
+    id: '/lance-produccion',
+    path: '/lance-produccion',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedKardexRoute = AuthenticatedKardexRouteImport.update({
   id: '/kardex',
   path: '/kardex',
@@ -294,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/inventario': typeof AuthenticatedInventarioRoute
   '/inventario-fisico': typeof AuthenticatedInventarioFisicoRoute
   '/kardex': typeof AuthenticatedKardexRoute
+  '/lance-produccion': typeof AuthenticatedLanceProduccionRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/mermas': typeof AuthenticatedMermasRoute
   '/salida': typeof AuthenticatedSalidaRoute
@@ -335,6 +343,7 @@ export interface FileRoutesByTo {
   '/inventario': typeof AuthenticatedInventarioRoute
   '/inventario-fisico': typeof AuthenticatedInventarioFisicoRoute
   '/kardex': typeof AuthenticatedKardexRoute
+  '/lance-produccion': typeof AuthenticatedLanceProduccionRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/mermas': typeof AuthenticatedMermasRoute
   '/salida': typeof AuthenticatedSalidaRoute
@@ -379,6 +388,7 @@ export interface FileRoutesById {
   '/_authenticated/inventario': typeof AuthenticatedInventarioRoute
   '/_authenticated/inventario-fisico': typeof AuthenticatedInventarioFisicoRoute
   '/_authenticated/kardex': typeof AuthenticatedKardexRoute
+  '/_authenticated/lance-produccion': typeof AuthenticatedLanceProduccionRoute
   '/_authenticated/mapa': typeof AuthenticatedMapaRoute
   '/_authenticated/mermas': typeof AuthenticatedMermasRoute
   '/_authenticated/salida': typeof AuthenticatedSalidaRoute
@@ -424,6 +434,7 @@ export interface FileRouteTypes {
     | '/inventario'
     | '/inventario-fisico'
     | '/kardex'
+    | '/lance-produccion'
     | '/mapa'
     | '/mermas'
     | '/salida'
@@ -465,6 +476,7 @@ export interface FileRouteTypes {
     | '/inventario'
     | '/inventario-fisico'
     | '/kardex'
+    | '/lance-produccion'
     | '/mapa'
     | '/mermas'
     | '/salida'
@@ -508,6 +520,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inventario'
     | '/_authenticated/inventario-fisico'
     | '/_authenticated/kardex'
+    | '/_authenticated/lance-produccion'
     | '/_authenticated/mapa'
     | '/_authenticated/mermas'
     | '/_authenticated/salida'
@@ -604,6 +617,13 @@ declare module '@tanstack/react-router' {
       path: '/mapa'
       fullPath: '/mapa'
       preLoaderRoute: typeof AuthenticatedMapaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lance-produccion': {
+      id: '/_authenticated/lance-produccion'
+      path: '/lance-produccion'
+      fullPath: '/lance-produccion'
+      preLoaderRoute: typeof AuthenticatedLanceProduccionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/kardex': {
@@ -847,6 +867,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventarioRoute: typeof AuthenticatedInventarioRoute
   AuthenticatedInventarioFisicoRoute: typeof AuthenticatedInventarioFisicoRoute
   AuthenticatedKardexRoute: typeof AuthenticatedKardexRoute
+  AuthenticatedLanceProduccionRoute: typeof AuthenticatedLanceProduccionRoute
   AuthenticatedMapaRoute: typeof AuthenticatedMapaRoute
   AuthenticatedMermasRoute: typeof AuthenticatedMermasRoute
   AuthenticatedSalidaRoute: typeof AuthenticatedSalidaRoute
@@ -889,6 +910,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInventarioRoute: AuthenticatedInventarioRoute,
   AuthenticatedInventarioFisicoRoute: AuthenticatedInventarioFisicoRoute,
   AuthenticatedKardexRoute: AuthenticatedKardexRoute,
+  AuthenticatedLanceProduccionRoute: AuthenticatedLanceProduccionRoute,
   AuthenticatedMapaRoute: AuthenticatedMapaRoute,
   AuthenticatedMermasRoute: AuthenticatedMermasRoute,
   AuthenticatedSalidaRoute: AuthenticatedSalidaRoute,
