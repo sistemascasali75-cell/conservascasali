@@ -432,6 +432,174 @@ export type Database = {
           },
         ]
       }
+      lance_insumos: {
+        Row: {
+          cantidad: number
+          created_at: string
+          id: string
+          insumo_id: string | null
+          lance_id: string
+          movimiento_insumo_id: string | null
+          nombre: string
+          observacion: string | null
+          orden: number
+          presentacion: string | null
+        }
+        Insert: {
+          cantidad?: number
+          created_at?: string
+          id?: string
+          insumo_id?: string | null
+          lance_id: string
+          movimiento_insumo_id?: string | null
+          nombre: string
+          observacion?: string | null
+          orden?: number
+          presentacion?: string | null
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          id?: string
+          insumo_id?: string | null
+          lance_id?: string
+          movimiento_insumo_id?: string | null
+          nombre?: string
+          observacion?: string | null
+          orden?: number
+          presentacion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lance_insumos_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lance_insumos_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "vista_insumos_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lance_insumos_lance_id_fkey"
+            columns: ["lance_id"]
+            isOneToOne: false
+            referencedRelation: "lances_produccion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lance_insumos_movimiento_insumo_id_fkey"
+            columns: ["movimiento_insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos_movimientos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lance_insumos_movimiento_insumo_id_fkey"
+            columns: ["movimiento_insumo_id"]
+            isOneToOne: false
+            referencedRelation: "vista_insumos_movimientos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lances_produccion: {
+        Row: {
+          aceite: string | null
+          agua: string | null
+          carros: number
+          created_at: string
+          envasado: string | null
+          envase: string
+          fecha: string
+          id: string
+          lance_prod_cajas: number
+          lance_prod_latas: number
+          lance_real_cajas: number
+          lance_real_latas: number
+          latas_por_caja: number
+          merma_malas_cajas: number
+          merma_malas_latas: number
+          merma_maquina_cajas: number
+          merma_maquina_latas: number
+          merma_muestras_cajas: number
+          merma_muestras_latas: number
+          merma_pruebas_cajas: number
+          merma_pruebas_latas: number
+          numero: number
+          observaciones: string | null
+          parametros_extra: Json
+          producto: string
+          registrado_por: string | null
+          updated_at: string
+          usuario_cliente: string
+        }
+        Insert: {
+          aceite?: string | null
+          agua?: string | null
+          carros?: number
+          created_at?: string
+          envasado?: string | null
+          envase?: string
+          fecha?: string
+          id?: string
+          lance_prod_cajas?: number
+          lance_prod_latas?: number
+          lance_real_cajas?: number
+          lance_real_latas?: number
+          latas_por_caja?: number
+          merma_malas_cajas?: number
+          merma_malas_latas?: number
+          merma_maquina_cajas?: number
+          merma_maquina_latas?: number
+          merma_muestras_cajas?: number
+          merma_muestras_latas?: number
+          merma_pruebas_cajas?: number
+          merma_pruebas_latas?: number
+          numero?: number
+          observaciones?: string | null
+          parametros_extra?: Json
+          producto?: string
+          registrado_por?: string | null
+          updated_at?: string
+          usuario_cliente?: string
+        }
+        Update: {
+          aceite?: string | null
+          agua?: string | null
+          carros?: number
+          created_at?: string
+          envasado?: string | null
+          envase?: string
+          fecha?: string
+          id?: string
+          lance_prod_cajas?: number
+          lance_prod_latas?: number
+          lance_real_cajas?: number
+          lance_real_latas?: number
+          latas_por_caja?: number
+          merma_malas_cajas?: number
+          merma_malas_latas?: number
+          merma_maquina_cajas?: number
+          merma_maquina_latas?: number
+          merma_muestras_cajas?: number
+          merma_muestras_latas?: number
+          merma_pruebas_cajas?: number
+          merma_pruebas_latas?: number
+          numero?: number
+          observaciones?: string | null
+          parametros_extra?: Json
+          producto?: string
+          registrado_por?: string | null
+          updated_at?: string
+          usuario_cliente?: string
+        }
+        Relationships: []
+      }
       lotes: {
         Row: {
           certificadora: string | null
