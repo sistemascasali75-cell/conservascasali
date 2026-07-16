@@ -563,47 +563,22 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
               <Button size="sm" variant="outline" onClick={addIns}><Plus className="size-4" /> Añadir</Button>
             </div>
           </div>
-          <div className="overflow-x-auto rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8">#</TableHead>
-                  <TableHead>Insumo</TableHead>
-                  <TableHead>Presentación / Marca</TableHead>
-                  <TableHead>Vincular a catálogo</TableHead>
-                  <TableHead className="text-right w-28">Cantidad</TableHead>
-                  <TableHead className="w-10"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {insumos.map((r, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="text-xs text-muted-foreground">{i + 1}</TableCell>
-                    <TableCell><Input value={r.nombre} onChange={(e) => updIns(i, { nombre: e.target.value })} placeholder="Nombre" /></TableCell>
-                    <TableCell><Input value={r.presentacion} onChange={(e) => updIns(i, { presentacion: e.target.value })} placeholder="—" /></TableCell>
-                    <TableCell>
-                      <Select value={r.insumo_id ?? "none"} onValueChange={(v) => {
-                        const ins = insumosCat.find((x) => x.id === v);
-                        updIns(i, { insumo_id: v === "none" ? null : v, nombre: ins ? ins.insumo : r.nombre, presentacion: ins?.formato ?? r.presentacion });
-                      }}>
-                        <SelectTrigger className="text-xs">
-                          <div className="flex items-center gap-1 truncate">
-                            {r.insumo_id ? <Link2 className="size-3 text-emerald-600" /> : null}
-                            <SelectValue placeholder="— sin vincular —" />
-                          </div>
-                        </SelectTrigger>
-                        <SelectContent className="max-h-72">
-                          <SelectItem value="none">— sin vincular —</SelectItem>
-                          {insumosCat.map((c) => <SelectItem key={c.id} value={c.id}>{c.codigo} · {c.insumo}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell><Input type="number" step="any" className="text-right" value={r.cantidad || ""} onChange={(e) => updIns(i, { cantidad: +e.target.value || 0 })} /></TableCell>
-                    <TableCell><Button size="icon" variant="ghost" onClick={() => rmIns(i)}><Trash2 className="size-4 text-rose-600" /></Button></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="space-y-2">
+            {insumos.map((r, i) => (
+              <InsumoRow
+                key={i}
+                idx={i}
+                row={r}
+                insumosCat={insumosCat}
+                onChange={(patch) => updIns(i, patch)}
+                onRemove={() => rmIns(i)}
+              />
+            ))}
+            {insumos.length === 0 && (
+              <div className="text-xs text-muted-foreground text-center border rounded-lg p-4">
+                Sin insumos. Usa <b>Añadir</b> para agregar uno.
+              </div>
+            )}
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <AlertTriangle className="size-3" />
