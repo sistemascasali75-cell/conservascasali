@@ -514,6 +514,8 @@ export type Database = {
           carros: number
           created_at: string
           envasado: string | null
+          envasado_cajas: number
+          envasado_latas: number
           envase: string
           fecha: string
           id: string
@@ -544,6 +546,8 @@ export type Database = {
           carros?: number
           created_at?: string
           envasado?: string | null
+          envasado_cajas?: number
+          envasado_latas?: number
           envase?: string
           fecha?: string
           id?: string
@@ -574,6 +578,8 @@ export type Database = {
           carros?: number
           created_at?: string
           envasado?: string | null
+          envasado_cajas?: number
+          envasado_latas?: number
           envase?: string
           fecha?: string
           id?: string
