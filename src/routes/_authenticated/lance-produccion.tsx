@@ -33,6 +33,7 @@ type Lance = {
   envasado: string | null; aceite: string | null; agua: string | null;
   parametros_extra: { nombre: string; valor: string; unidad?: string }[];
   carros: number;
+  envasado_cajas: number; envasado_latas: number;
   lance_prod_cajas: number; lance_prod_latas: number;
   lance_real_cajas: number; lance_real_latas: number;
   merma_pruebas_cajas: number; merma_pruebas_latas: number;
@@ -58,6 +59,8 @@ type InsumoCat = { id: string; codigo: string; insumo: string; formato: string |
 
 const ENVASES = ["1/2 LB", "1 LB TALL", "TINAPON", "OTRO"];
 const LATAS_POR_CAJA_DEFAULT: Record<string, number> = { "1/2 LB": 48, "1 LB TALL": 24, "TINAPON": 24, "OTRO": 48 };
+const CLIENTE_DEFAULT = "CASALI - QALIWARMA";
+const ENVASADO_GR_OPTS = ["107 - 108", "112 - 113"];
 
 // Insumos por defecto según el reporte
 const INSUMOS_TEMPLATE: Omit<LanceInsumoRow, "orden">[] = [
@@ -107,6 +110,42 @@ function LanceProduccionPage() {
         .order("insumo");
       if (error) throw error;
       return (data ?? []) as InsumoCat[];
+    },
+  });
+
+  const { data: productosCat = [] } = useQuery({
+    queryKey: ["productos-catalogo-lance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("productos")
+        .select("id,descripcion,envase").eq("activo", true)
+        .order("descripcion");
+      if (error) throw error;
+      return (data ?? []) as { id: string; descripcion: string; envase: string | null }[];
+    },
+  });
+
+  // Últimas 10 SALIDAS de insumos → catálogo filtrado para vincular
+  const { data: insumosSalidaRecent = [] } = useQuery({
+    queryKey: ["insumos-salida-recientes"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("insumos_movimientos")
+        .select("insumo_id, fecha, created_at")
+        .eq("clase", "SALIDA")
+        .order("fecha", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      const seen = new Set<string>();
+      const list: string[] = [];
+      for (const r of (data ?? []) as any[]) {
+        if (r.insumo_id && !seen.has(r.insumo_id)) {
+          seen.add(r.insumo_id);
+          list.push(r.insumo_id);
+          if (list.length >= 10) break;
+        }
+      }
+      return list;
     },
   });
 
@@ -189,6 +228,8 @@ function LanceProduccionPage() {
             <DialogTrigger asChild><Button><Plus className="size-4" /> Nuevo lance</Button></DialogTrigger>
             <LanceFormDialog
               insumosCat={insumosCat}
+              productosCat={productosCat}
+              insumosSalidaRecent={insumosSalidaRecent}
               onDone={() => { setOpenForm(false); qc.invalidateQueries({ queryKey: ["lances"] }); }}
             />
           </Dialog>
@@ -364,17 +405,28 @@ function ResumenPorProducto({ lances }: { lances: Lance[] }) {
 /* FORM DIALOG                                                                */
 /* ------------------------------------------------------------------------- */
 
-function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDone: () => void }) {
+function LanceFormDialog({
+  insumosCat, productosCat, insumosSalidaRecent, onDone,
+}: {
+  insumosCat: InsumoCat[];
+  productosCat: { id: string; descripcion: string; envase: string | null }[];
+  insumosSalidaRecent: string[];
+  onDone: () => void;
+}) {
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
-  const [usuarioCliente, setUsuarioCliente] = useState("");
+  const [usuarioCliente, setUsuarioCliente] = useState(CLIENTE_DEFAULT);
   const [producto, setProducto] = useState("");
+  const [productoCustom, setProductoCustom] = useState(false);
   const [envase, setEnvase] = useState("1/2 LB");
   const [latasPorCaja, setLatasPorCaja] = useState(48);
   const [envasado, setEnvasado] = useState("");
+  const [envasadoCustom, setEnvasadoCustom] = useState(false);
   const [aceite, setAceite] = useState("");
   const [agua, setAgua] = useState("");
   const [carros, setCarros] = useState(0);
 
+  const [envasadoCajas, setEnvasadoCajas] = useState(0);
+  const [envasadoLatasSueltas, setEnvasadoLatasSueltas] = useState(0);
   const [prodCajas, setProdCajas] = useState(0);
   const [prodLatas, setProdLatas] = useState(0);
   const [realCajas, setRealCajas] = useState(0);
@@ -391,6 +443,7 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
   );
   const [registrarMovs, setRegistrarMovs] = useState(true);
 
+  const totalEnvasado = totalLatas(envasadoCajas, envasadoLatasSueltas, latasPorCaja);
   const totalProd = totalLatas(prodCajas, prodLatas, latasPorCaja);
   const totalReal = totalLatas(realCajas, realLatas, latasPorCaja);
   const totalMermas =
@@ -421,7 +474,9 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
         fecha, usuario_cliente: usuarioCliente, producto, envase, latas_por_caja: latasPorCaja,
         envasado: envasado || null, aceite: aceite || null, agua: agua || null,
         parametros_extra: [],
-        carros, lance_prod_cajas: prodCajas, lance_prod_latas: prodLatas,
+        carros,
+        envasado_cajas: envasadoCajas, envasado_latas: envasadoLatasSueltas,
+        lance_prod_cajas: prodCajas, lance_prod_latas: prodLatas,
         lance_real_cajas: realCajas, lance_real_latas: realLatas,
         merma_pruebas_cajas: mPruebas.c, merma_pruebas_latas: mPruebas.l,
         merma_malas_cajas: mMalas.c, merma_malas_latas: mMalas.l,
@@ -486,8 +541,25 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Datos generales</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <Field label="Fecha"><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></Field>
-            <Field label="Cliente / Usuario"><Input value={usuarioCliente} onChange={(e) => setUsuarioCliente(e.target.value)} placeholder="CASALI - QALIWARMA" /></Field>
-            <Field label="Producto" className="md:col-span-2"><Input value={producto} onChange={(e) => setProducto(e.target.value)} placeholder="FILETE DE BONITO EN ACEITE VEGETAL" /></Field>
+            <Field label="Cliente / Usuario"><Input value={usuarioCliente} onChange={(e) => setUsuarioCliente(e.target.value)} placeholder={CLIENTE_DEFAULT} /></Field>
+            <Field label="Producto" className="md:col-span-2">
+              {productoCustom ? (
+                <div className="flex gap-1">
+                  <Input value={producto} onChange={(e) => setProducto(e.target.value)} placeholder="Escribir producto…" autoFocus />
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setProductoCustom(false); setProducto(""); }}>↩</Button>
+                </div>
+              ) : (
+                <Select value={producto} onValueChange={(v) => { if (v === "__custom__") { setProductoCustom(true); setProducto(""); } else { setProducto(v); const p = productosCat.find(x => x.descripcion === v); if (p?.envase && ENVASES.includes(p.envase)) onEnvaseChange(p.envase); } }}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar producto del catálogo…" /></SelectTrigger>
+                  <SelectContent>
+                    {productosCat.map((p) => (
+                      <SelectItem key={p.id} value={p.descripcion}>{p.descripcion}{p.envase ? ` · ${p.envase}` : ""}</SelectItem>
+                    ))}
+                    <SelectItem value="__custom__">✎ Escribir manualmente…</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
             <Field label="Envase">
               <Select value={envase} onValueChange={onEnvaseChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -505,7 +577,22 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
         <section className="space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">I · Parámetros de producción</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Field label="Envasado (gr)"><Input value={envasado} onChange={(e) => setEnvasado(e.target.value)} placeholder="107-108 / 108-109" /></Field>
+            <Field label="Envasado (gr)">
+              {envasadoCustom ? (
+                <div className="flex gap-1">
+                  <Input value={envasado} onChange={(e) => setEnvasado(e.target.value)} placeholder="Escribir…" autoFocus />
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setEnvasadoCustom(false); setEnvasado(""); }}>↩</Button>
+                </div>
+              ) : (
+                <Select value={envasado} onValueChange={(v) => { if (v === "__custom__") { setEnvasadoCustom(true); setEnvasado(""); } else setEnvasado(v); }}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                  <SelectContent>
+                    {ENVASADO_GR_OPTS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    <SelectItem value="__custom__">✎ Escribir manualmente…</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
             <Field label="Aceite (ml)"><Input value={aceite} onChange={(e) => setAceite(e.target.value)} placeholder="45" /></Field>
             <Field label="Agua (ml)"><Input value={agua} onChange={(e) => setAgua(e.target.value)} placeholder="25 / 26" /></Field>
           </div>
@@ -516,7 +603,12 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
         {/* Resumen de producción */}
         <section className="space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">II · Resumen de producción</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-lg border p-3 space-y-2 bg-sky-50/50 dark:bg-sky-950/20 border-sky-200">
+              <div className="text-xs font-semibold text-sky-700">Total envasado</div>
+              <CajasLatasInput cajas={envasadoCajas} latas={envasadoLatasSueltas} setC={setEnvasadoCajas} setL={setEnvasadoLatasSueltas} />
+              <div className="text-right text-xs">Total: <span className="font-semibold text-sky-700">{formatNumber(totalEnvasado, 0)}</span> latas</div>
+            </div>
             <div className="rounded-lg border p-3 space-y-2">
               <div className="text-xs font-semibold text-muted-foreground">Lance proyectado</div>
               <CajasLatasInput cajas={prodCajas} latas={prodLatas} setC={setProdCajas} setL={setProdLatas} />
@@ -528,8 +620,10 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
               <div className="text-right text-xs">Total: <span className="font-semibold text-emerald-700">{formatNumber(totalReal, 0)}</span> latas</div>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground text-right">
-            Diferencia: <span className="font-semibold">{formatNumber(totalProd - totalReal, 0)}</span> latas
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground">
+            <div>Δ Proyectado - Real: <span className="font-semibold">{formatNumber(totalProd - totalReal, 0)}</span></div>
+            <div>Δ Real - Envasado: <span className={`font-semibold ${totalReal - totalEnvasado < 0 ? "text-rose-600" : "text-emerald-700"}`}>{formatNumber(totalReal - totalEnvasado, 0)}</span></div>
+            <div>Δ Envasado - Proyectado: <span className="font-semibold">{formatNumber(totalEnvasado - totalProd, 0)}</span></div>
           </div>
         </section>
 
@@ -570,6 +664,7 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
                 idx={i}
                 row={r}
                 insumosCat={insumosCat}
+                insumosSalidaRecent={insumosSalidaRecent}
                 onChange={(patch) => updIns(i, patch)}
                 onRemove={() => rmIns(i)}
               />
@@ -585,6 +680,23 @@ function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDo
             Solo los insumos vinculados al catálogo generarán un movimiento de salida tipo <b>PRODUCCIÓN</b>.
           </div>
         </section>
+
+        <Separator />
+
+        {/* Resumen final inteligente */}
+        <ResumenFinal
+          latasPorCaja={latasPorCaja}
+          totalEnvasado={totalEnvasado}
+          totalProd={totalProd}
+          totalReal={totalReal}
+          envasadoCajas={envasadoCajas}
+          envasadoLatas={envasadoLatasSueltas}
+          prodCajas={prodCajas}
+          prodLatas={prodLatas}
+          realCajas={realCajas}
+          realLatas={realLatas}
+          insumos={insumos}
+        />
 
         <Separator />
 
@@ -621,6 +733,152 @@ function CajasLatasInput({ cajas, latas, setC, setL }: { cajas: number; latas: n
   );
 }
 
+/* ------------------------------------------------------------------------- */
+/* RESUMEN FINAL INTELIGENTE                                                  */
+/* ------------------------------------------------------------------------- */
+
+function ResumenFinal({
+  latasPorCaja, totalEnvasado, totalProd, totalReal,
+  envasadoCajas, envasadoLatas, prodCajas, prodLatas, realCajas, realLatas,
+  insumos,
+}: {
+  latasPorCaja: number;
+  totalEnvasado: number; totalProd: number; totalReal: number;
+  envasadoCajas: number; envasadoLatas: number;
+  prodCajas: number; prodLatas: number;
+  realCajas: number; realLatas: number;
+  insumos: LanceInsumoRow[];
+}) {
+  // Referencia principal para tapas / envases = latas envasadas (o real si no hay envasado)
+  const ref = totalEnvasado > 0 ? totalEnvasado : totalReal;
+
+  const matchQty = (patterns: RegExp[]) =>
+    insumos
+      .filter((r) => r.nombre && patterns.some((p) => p.test(r.nombre)))
+      .reduce((a, r) => a + (Number(r.cantidad) || 0), 0);
+
+  const tapasQty = matchQty([/tapa/i]);
+  const envasesQty = matchQty([/envase/i, /lata/i]);
+  // cartón / cajas
+  const cartonQty = matchQty([/cart[oó]n/i, /caja/i]);
+
+  const cajasRef = Math.ceil(ref / Math.max(1, latasPorCaja));
+
+  const analisis = [
+    {
+      concepto: "Tapas",
+      esperado: ref,
+      real: tapasQty,
+      referencia: "latas envasadas",
+    },
+    {
+      concepto: "Envases (latas)",
+      esperado: ref,
+      real: envasesQty,
+      referencia: "latas envasadas",
+    },
+    {
+      concepto: "Cartón (cajas)",
+      esperado: cajasRef,
+      real: cartonQty,
+      referencia: `cajas ≈ ⌈latas / ${latasPorCaja}⌉`,
+    },
+  ];
+
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        V · Resumen final & análisis de diferencias
+      </h3>
+
+      {/* Totales de cajas / latas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <ResumenCard tone="sky" label="Total envasado" cajas={envasadoCajas} latas={envasadoLatas} total={totalEnvasado} lpc={latasPorCaja} />
+        <ResumenCard tone="slate" label="Lance proyectado" cajas={prodCajas} latas={prodLatas} total={totalProd} lpc={latasPorCaja} />
+        <ResumenCard tone="amber" label="Lance real (validado)" cajas={realCajas} latas={realLatas} total={totalReal} lpc={latasPorCaja} />
+      </div>
+
+      {/* Diferencias */}
+      <div className="rounded-lg border bg-gradient-to-br from-primary/5 to-transparent p-3">
+        <div className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Diferencias generales (latas)</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+          <DiffPill label="Real − Envasado" v={totalReal - totalEnvasado} />
+          <DiffPill label="Real − Proyectado" v={totalReal - totalProd} />
+          <DiffPill label="Envasado − Proyectado" v={totalEnvasado - totalProd} />
+        </div>
+      </div>
+
+      {/* Análisis de insumos vs latas/cajas */}
+      <div className="rounded-lg border overflow-hidden">
+        <div className="p-2 text-xs font-semibold bg-muted flex items-center justify-between">
+          <span>Análisis de diferencias · insumos vs referencia ({formatNumber(ref, 0)} latas · {formatNumber(cajasRef, 0)} cajas)</span>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Concepto</TableHead>
+              <TableHead className="text-right">Esperado</TableHead>
+              <TableHead className="text-right">Registrado</TableHead>
+              <TableHead className="text-right">Δ</TableHead>
+              <TableHead className="text-right">% desvío</TableHead>
+              <TableHead className="text-xs">Referencia</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {analisis.map((a) => {
+              const diff = a.real - a.esperado;
+              const pct = a.esperado > 0 ? (diff / a.esperado) * 100 : 0;
+              const tone = a.real === 0 ? "text-muted-foreground" : Math.abs(pct) < 2 ? "text-emerald-700" : Math.abs(pct) < 5 ? "text-amber-700" : "text-rose-700";
+              return (
+                <TableRow key={a.concepto}>
+                  <TableCell className="font-medium">{a.concepto}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatNumber(a.esperado, 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatNumber(a.real, 0)}</TableCell>
+                  <TableCell className={`text-right tabular-nums font-semibold ${tone}`}>{diff > 0 ? "+" : ""}{formatNumber(diff, 0)}</TableCell>
+                  <TableCell className={`text-right tabular-nums ${tone}`}>{a.esperado > 0 ? `${pct > 0 ? "+" : ""}${formatNumber(pct, 2)}%` : "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{a.referencia}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+        <div className="p-2 text-[11px] text-muted-foreground bg-muted/40 flex items-center gap-1">
+          <AlertTriangle className="size-3" />
+          El análisis detecta insumos por nombre: <b>tapa</b>, <b>envase/lata</b>, <b>cartón/caja</b>. Vincula al catálogo para movimientos automáticos.
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ResumenCard({ tone, label, cajas, latas, total, lpc }: {
+  tone: "sky" | "slate" | "amber"; label: string; cajas: number; latas: number; total: number; lpc: number;
+}) {
+  const toneCls = tone === "sky" ? "bg-sky-50 border-sky-200 dark:bg-sky-950/20" :
+    tone === "amber" ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20" : "bg-muted/30";
+  const textCls = tone === "sky" ? "text-sky-700" : tone === "amber" ? "text-amber-700" : "text-foreground";
+  return (
+    <div className={`rounded-lg border p-3 ${toneCls}`}>
+      <div className={`text-[11px] uppercase tracking-wider font-semibold ${textCls}`}>{label}</div>
+      <div className="mt-1 text-2xl font-bold tabular-nums">{formatNumber(total, 0)} <span className="text-xs font-normal text-muted-foreground">latas</span></div>
+      <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
+        {formatNumber(cajas, 0)} cajas + {latas} latas sueltas · ×{lpc}
+      </div>
+    </div>
+  );
+}
+
+function DiffPill({ label, v }: { label: string; v: number }) {
+  const tone = v === 0 ? "bg-muted text-foreground" : v > 0 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300";
+  return (
+    <div className={`rounded-md px-3 py-2 flex items-center justify-between ${tone}`}>
+      <span className="text-xs">{label}</span>
+      <span className="font-bold tabular-nums">{v > 0 ? "+" : ""}{formatNumber(v, 0)}</span>
+    </div>
+  );
+}
+
+
 function MermaRow({ label, v, set, lpc }: { label: string; v: { c: number; l: number }; set: (v: { c: number; l: number }) => void; lpc: number }) {
   return (
     <div className="rounded-md border p-2 space-y-1">
@@ -644,23 +902,29 @@ type InsumoMovRecent = {
 };
 
 function InsumoRow({
-  idx, row, insumosCat, onChange, onRemove,
+  idx, row, insumosCat, insumosSalidaRecent, onChange, onRemove,
 }: {
   idx: number;
   row: LanceInsumoRow;
   insumosCat: InsumoCat[];
+  insumosSalidaRecent: string[];
   onChange: (patch: Partial<LanceInsumoRow>) => void;
   onRemove: () => void;
 }) {
-  const options = useMemo(
-    () => insumosCat.map((c) => ({
+  const options = useMemo(() => {
+    // Preservar el orden de últimos SALIDA (más reciente primero)
+    const filtered = insumosSalidaRecent.length > 0
+      ? (insumosSalidaRecent
+          .map((id) => insumosCat.find((c) => c.id === id))
+          .filter(Boolean) as InsumoCat[])
+      : insumosCat;
+    return filtered.map((c) => ({
       value: c.id,
       label: `${c.codigo} · ${c.insumo}`,
       description: c.formato ?? undefined,
       searchText: `${c.codigo} ${c.insumo} ${c.formato ?? ""}`,
-    })),
-    [insumosCat],
-  );
+    }));
+  }, [insumosCat, insumosSalidaRecent]);
 
   const { data: recent = [] } = useQuery({
     queryKey: ["insumo-movs-recent", row.insumo_id],
@@ -783,6 +1047,7 @@ function LanceDetailDialog({ lance, onClose }: { lance: Lance | null; onClose: (
   const lpc = lance.latas_por_caja;
   const totalReal = totalLatas(lance.lance_real_cajas, lance.lance_real_latas, lpc);
   const totalProd = totalLatas(lance.lance_prod_cajas, lance.lance_prod_latas, lpc);
+  const totalEnv = totalLatas(lance.envasado_cajas ?? 0, lance.envasado_latas ?? 0, lpc);
   const mermas = [
     ["Pruebas de cierre", lance.merma_pruebas_cajas, lance.merma_pruebas_latas],
     ["Malas en envasado", lance.merma_malas_cajas, lance.merma_malas_latas],
@@ -815,8 +1080,11 @@ function LanceDetailDialog({ lance, onClose }: { lance: Lance | null; onClose: (
               <TableHeader><TableRow><TableHead>Concepto</TableHead><TableHead className="text-right">Cajas</TableHead><TableHead className="text-right">Latas</TableHead><TableHead className="text-right">Total latas</TableHead></TableRow></TableHeader>
               <TableBody>
                 <TableRow><TableCell>Lance proyectado</TableCell><TableCell className="text-right">{lance.lance_prod_cajas}</TableCell><TableCell className="text-right">{lance.lance_prod_latas}</TableCell><TableCell className="text-right">{formatNumber(totalProd, 0)}</TableCell></TableRow>
+                <TableRow className="bg-sky-50 dark:bg-sky-950/20"><TableCell>Total envasado</TableCell><TableCell className="text-right">{lance.envasado_cajas ?? 0}</TableCell><TableCell className="text-right">{lance.envasado_latas ?? 0}</TableCell><TableCell className="text-right font-semibold text-sky-700">{formatNumber(totalEnv, 0)}</TableCell></TableRow>
+                <TableRow><TableCell>Lance proyectado</TableCell><TableCell className="text-right">{lance.lance_prod_cajas}</TableCell><TableCell className="text-right">{lance.lance_prod_latas}</TableCell><TableCell className="text-right">{formatNumber(totalProd, 0)}</TableCell></TableRow>
                 <TableRow className="bg-amber-50 dark:bg-amber-950/20"><TableCell>Lance real</TableCell><TableCell className="text-right">{lance.lance_real_cajas}</TableCell><TableCell className="text-right">{lance.lance_real_latas}</TableCell><TableCell className="text-right font-semibold text-emerald-700">{formatNumber(totalReal, 0)}</TableCell></TableRow>
-                <TableRow><TableCell>Diferencia</TableCell><TableCell colSpan={2}></TableCell><TableCell className="text-right">{formatNumber(totalProd - totalReal, 0)}</TableCell></TableRow>
+                <TableRow><TableCell>Δ Real − Envasado</TableCell><TableCell colSpan={2}></TableCell><TableCell className="text-right font-semibold">{formatNumber(totalReal - totalEnv, 0)}</TableCell></TableRow>
+                <TableRow><TableCell>Δ Proyectado − Real</TableCell><TableCell colSpan={2}></TableCell><TableCell className="text-right">{formatNumber(totalProd - totalReal, 0)}</TableCell></TableRow>
               </TableBody>
             </Table>
           </div>
