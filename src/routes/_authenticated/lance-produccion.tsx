@@ -33,6 +33,7 @@ type Lance = {
   envasado: string | null; aceite: string | null; agua: string | null;
   parametros_extra: { nombre: string; valor: string; unidad?: string }[];
   carros: number;
+  envasado_cajas: number; envasado_latas: number;
   lance_prod_cajas: number; lance_prod_latas: number;
   lance_real_cajas: number; lance_real_latas: number;
   merma_pruebas_cajas: number; merma_pruebas_latas: number;
