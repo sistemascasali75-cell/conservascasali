@@ -733,6 +733,152 @@ function CajasLatasInput({ cajas, latas, setC, setL }: { cajas: number; latas: n
   );
 }
 
+/* ------------------------------------------------------------------------- */
+/* RESUMEN FINAL INTELIGENTE                                                  */
+/* ------------------------------------------------------------------------- */
+
+function ResumenFinal({
+  latasPorCaja, totalEnvasado, totalProd, totalReal,
+  envasadoCajas, envasadoLatas, prodCajas, prodLatas, realCajas, realLatas,
+  insumos,
+}: {
+  latasPorCaja: number;
+  totalEnvasado: number; totalProd: number; totalReal: number;
+  envasadoCajas: number; envasadoLatas: number;
+  prodCajas: number; prodLatas: number;
+  realCajas: number; realLatas: number;
+  insumos: LanceInsumoRow[];
+}) {
+  // Referencia principal para tapas / envases = latas envasadas (o real si no hay envasado)
+  const ref = totalEnvasado > 0 ? totalEnvasado : totalReal;
+
+  const matchQty = (patterns: RegExp[]) =>
+    insumos
+      .filter((r) => r.nombre && patterns.some((p) => p.test(r.nombre)))
+      .reduce((a, r) => a + (Number(r.cantidad) || 0), 0);
+
+  const tapasQty = matchQty([/tapa/i]);
+  const envasesQty = matchQty([/envase/i, /lata/i]);
+  // cartón / cajas
+  const cartonQty = matchQty([/cart[oó]n/i, /caja/i]);
+
+  const cajasRef = Math.ceil(ref / Math.max(1, latasPorCaja));
+
+  const analisis = [
+    {
+      concepto: "Tapas",
+      esperado: ref,
+      real: tapasQty,
+      referencia: "latas envasadas",
+    },
+    {
+      concepto: "Envases (latas)",
+      esperado: ref,
+      real: envasesQty,
+      referencia: "latas envasadas",
+    },
+    {
+      concepto: "Cartón (cajas)",
+      esperado: cajasRef,
+      real: cartonQty,
+      referencia: `cajas ≈ ⌈latas / ${latasPorCaja}⌉`,
+    },
+  ];
+
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        V · Resumen final & análisis de diferencias
+      </h3>
+
+      {/* Totales de cajas / latas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <ResumenCard tone="sky" label="Total envasado" cajas={envasadoCajas} latas={envasadoLatas} total={totalEnvasado} lpc={latasPorCaja} />
+        <ResumenCard tone="slate" label="Lance proyectado" cajas={prodCajas} latas={prodLatas} total={totalProd} lpc={latasPorCaja} />
+        <ResumenCard tone="amber" label="Lance real (validado)" cajas={realCajas} latas={realLatas} total={totalReal} lpc={latasPorCaja} />
+      </div>
+
+      {/* Diferencias */}
+      <div className="rounded-lg border bg-gradient-to-br from-primary/5 to-transparent p-3">
+        <div className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Diferencias generales (latas)</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+          <DiffPill label="Real − Envasado" v={totalReal - totalEnvasado} />
+          <DiffPill label="Real − Proyectado" v={totalReal - totalProd} />
+          <DiffPill label="Envasado − Proyectado" v={totalEnvasado - totalProd} />
+        </div>
+      </div>
+
+      {/* Análisis de insumos vs latas/cajas */}
+      <div className="rounded-lg border overflow-hidden">
+        <div className="p-2 text-xs font-semibold bg-muted flex items-center justify-between">
+          <span>Análisis de diferencias · insumos vs referencia ({formatNumber(ref, 0)} latas · {formatNumber(cajasRef, 0)} cajas)</span>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Concepto</TableHead>
+              <TableHead className="text-right">Esperado</TableHead>
+              <TableHead className="text-right">Registrado</TableHead>
+              <TableHead className="text-right">Δ</TableHead>
+              <TableHead className="text-right">% desvío</TableHead>
+              <TableHead className="text-xs">Referencia</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {analisis.map((a) => {
+              const diff = a.real - a.esperado;
+              const pct = a.esperado > 0 ? (diff / a.esperado) * 100 : 0;
+              const tone = a.real === 0 ? "text-muted-foreground" : Math.abs(pct) < 2 ? "text-emerald-700" : Math.abs(pct) < 5 ? "text-amber-700" : "text-rose-700";
+              return (
+                <TableRow key={a.concepto}>
+                  <TableCell className="font-medium">{a.concepto}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatNumber(a.esperado, 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatNumber(a.real, 0)}</TableCell>
+                  <TableCell className={`text-right tabular-nums font-semibold ${tone}`}>{diff > 0 ? "+" : ""}{formatNumber(diff, 0)}</TableCell>
+                  <TableCell className={`text-right tabular-nums ${tone}`}>{a.esperado > 0 ? `${pct > 0 ? "+" : ""}${formatNumber(pct, 2)}%` : "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{a.referencia}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+        <div className="p-2 text-[11px] text-muted-foreground bg-muted/40 flex items-center gap-1">
+          <AlertTriangle className="size-3" />
+          El análisis detecta insumos por nombre: <b>tapa</b>, <b>envase/lata</b>, <b>cartón/caja</b>. Vincula al catálogo para movimientos automáticos.
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ResumenCard({ tone, label, cajas, latas, total, lpc }: {
+  tone: "sky" | "slate" | "amber"; label: string; cajas: number; latas: number; total: number; lpc: number;
+}) {
+  const toneCls = tone === "sky" ? "bg-sky-50 border-sky-200 dark:bg-sky-950/20" :
+    tone === "amber" ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20" : "bg-muted/30";
+  const textCls = tone === "sky" ? "text-sky-700" : tone === "amber" ? "text-amber-700" : "text-foreground";
+  return (
+    <div className={`rounded-lg border p-3 ${toneCls}`}>
+      <div className={`text-[11px] uppercase tracking-wider font-semibold ${textCls}`}>{label}</div>
+      <div className="mt-1 text-2xl font-bold tabular-nums">{formatNumber(total, 0)} <span className="text-xs font-normal text-muted-foreground">latas</span></div>
+      <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
+        {formatNumber(cajas, 0)} cajas + {latas} latas sueltas · ×{lpc}
+      </div>
+    </div>
+  );
+}
+
+function DiffPill({ label, v }: { label: string; v: number }) {
+  const tone = v === 0 ? "bg-muted text-foreground" : v > 0 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300";
+  return (
+    <div className={`rounded-md px-3 py-2 flex items-center justify-between ${tone}`}>
+      <span className="text-xs">{label}</span>
+      <span className="font-bold tabular-nums">{v > 0 ? "+" : ""}{formatNumber(v, 0)}</span>
+    </div>
+  );
+}
+
+
 function MermaRow({ label, v, set, lpc }: { label: string; v: { c: number; l: number }; set: (v: { c: number; l: number }) => void; lpc: number }) {
   return (
     <div className="rounded-md border p-2 space-y-1">
