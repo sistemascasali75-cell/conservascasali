@@ -443,6 +443,7 @@ function LanceFormDialog({
   );
   const [registrarMovs, setRegistrarMovs] = useState(true);
 
+  const totalEnvasado = totalLatas(envasadoCajas, envasadoLatasSueltas, latasPorCaja);
   const totalProd = totalLatas(prodCajas, prodLatas, latasPorCaja);
   const totalReal = totalLatas(realCajas, realLatas, latasPorCaja);
   const totalMermas =
