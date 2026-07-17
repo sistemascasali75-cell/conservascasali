@@ -902,23 +902,29 @@ type InsumoMovRecent = {
 };
 
 function InsumoRow({
-  idx, row, insumosCat, onChange, onRemove,
+  idx, row, insumosCat, insumosSalidaRecent, onChange, onRemove,
 }: {
   idx: number;
   row: LanceInsumoRow;
   insumosCat: InsumoCat[];
+  insumosSalidaRecent: string[];
   onChange: (patch: Partial<LanceInsumoRow>) => void;
   onRemove: () => void;
 }) {
-  const options = useMemo(
-    () => insumosCat.map((c) => ({
+  const options = useMemo(() => {
+    // Preservar el orden de últimos SALIDA (más reciente primero)
+    const filtered = insumosSalidaRecent.length > 0
+      ? (insumosSalidaRecent
+          .map((id) => insumosCat.find((c) => c.id === id))
+          .filter(Boolean) as InsumoCat[])
+      : insumosCat;
+    return filtered.map((c) => ({
       value: c.id,
       label: `${c.codigo} · ${c.insumo}`,
       description: c.formato ?? undefined,
       searchText: `${c.codigo} ${c.insumo} ${c.formato ?? ""}`,
-    })),
-    [insumosCat],
-  );
+    }));
+  }, [insumosCat, insumosSalidaRecent]);
 
   const { data: recent = [] } = useQuery({
     queryKey: ["insumo-movs-recent", row.insumo_id],
