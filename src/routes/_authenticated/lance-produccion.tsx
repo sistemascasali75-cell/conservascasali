@@ -1080,8 +1080,11 @@ function LanceDetailDialog({ lance, onClose }: { lance: Lance | null; onClose: (
               <TableHeader><TableRow><TableHead>Concepto</TableHead><TableHead className="text-right">Cajas</TableHead><TableHead className="text-right">Latas</TableHead><TableHead className="text-right">Total latas</TableHead></TableRow></TableHeader>
               <TableBody>
                 <TableRow><TableCell>Lance proyectado</TableCell><TableCell className="text-right">{lance.lance_prod_cajas}</TableCell><TableCell className="text-right">{lance.lance_prod_latas}</TableCell><TableCell className="text-right">{formatNumber(totalProd, 0)}</TableCell></TableRow>
+                <TableRow className="bg-sky-50 dark:bg-sky-950/20"><TableCell>Total envasado</TableCell><TableCell className="text-right">{lance.envasado_cajas ?? 0}</TableCell><TableCell className="text-right">{lance.envasado_latas ?? 0}</TableCell><TableCell className="text-right font-semibold text-sky-700">{formatNumber(totalEnv, 0)}</TableCell></TableRow>
+                <TableRow><TableCell>Lance proyectado</TableCell><TableCell className="text-right">{lance.lance_prod_cajas}</TableCell><TableCell className="text-right">{lance.lance_prod_latas}</TableCell><TableCell className="text-right">{formatNumber(totalProd, 0)}</TableCell></TableRow>
                 <TableRow className="bg-amber-50 dark:bg-amber-950/20"><TableCell>Lance real</TableCell><TableCell className="text-right">{lance.lance_real_cajas}</TableCell><TableCell className="text-right">{lance.lance_real_latas}</TableCell><TableCell className="text-right font-semibold text-emerald-700">{formatNumber(totalReal, 0)}</TableCell></TableRow>
-                <TableRow><TableCell>Diferencia</TableCell><TableCell colSpan={2}></TableCell><TableCell className="text-right">{formatNumber(totalProd - totalReal, 0)}</TableCell></TableRow>
+                <TableRow><TableCell>Δ Real − Envasado</TableCell><TableCell colSpan={2}></TableCell><TableCell className="text-right font-semibold">{formatNumber(totalReal - totalEnv, 0)}</TableCell></TableRow>
+                <TableRow><TableCell>Δ Proyectado − Real</TableCell><TableCell colSpan={2}></TableCell><TableCell className="text-right">{formatNumber(totalProd - totalReal, 0)}</TableCell></TableRow>
               </TableBody>
             </Table>
           </div>
