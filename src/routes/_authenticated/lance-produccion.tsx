@@ -113,6 +113,42 @@ function LanceProduccionPage() {
     },
   });
 
+  const { data: productosCat = [] } = useQuery({
+    queryKey: ["productos-catalogo-lance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("productos")
+        .select("id,descripcion,envase").eq("activo", true)
+        .order("descripcion");
+      if (error) throw error;
+      return (data ?? []) as { id: string; descripcion: string; envase: string | null }[];
+    },
+  });
+
+  // Últimas 10 SALIDAS de insumos → catálogo filtrado para vincular
+  const { data: insumosSalidaRecent = [] } = useQuery({
+    queryKey: ["insumos-salida-recientes"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("insumos_movimientos")
+        .select("insumo_id, fecha, created_at")
+        .eq("clase", "SALIDA")
+        .order("fecha", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      const seen = new Set<string>();
+      const list: string[] = [];
+      for (const r of (data ?? []) as any[]) {
+        if (r.insumo_id && !seen.has(r.insumo_id)) {
+          seen.add(r.insumo_id);
+          list.push(r.insumo_id);
+          if (list.length >= 10) break;
+        }
+      }
+      return list;
+    },
+  });
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return lances;
