@@ -1047,6 +1047,7 @@ function LanceDetailDialog({ lance, onClose }: { lance: Lance | null; onClose: (
   const lpc = lance.latas_por_caja;
   const totalReal = totalLatas(lance.lance_real_cajas, lance.lance_real_latas, lpc);
   const totalProd = totalLatas(lance.lance_prod_cajas, lance.lance_prod_latas, lpc);
+  const totalEnv = totalLatas(lance.envasado_cajas ?? 0, lance.envasado_latas ?? 0, lpc);
   const mermas = [
     ["Pruebas de cierre", lance.merma_pruebas_cajas, lance.merma_pruebas_latas],
     ["Malas en envasado", lance.merma_malas_cajas, lance.merma_malas_latas],
