@@ -405,17 +405,28 @@ function ResumenPorProducto({ lances }: { lances: Lance[] }) {
 /* FORM DIALOG                                                                */
 /* ------------------------------------------------------------------------- */
 
-function LanceFormDialog({ insumosCat, onDone }: { insumosCat: InsumoCat[]; onDone: () => void }) {
+function LanceFormDialog({
+  insumosCat, productosCat, insumosSalidaRecent, onDone,
+}: {
+  insumosCat: InsumoCat[];
+  productosCat: { id: string; descripcion: string; envase: string | null }[];
+  insumosSalidaRecent: string[];
+  onDone: () => void;
+}) {
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
-  const [usuarioCliente, setUsuarioCliente] = useState("");
+  const [usuarioCliente, setUsuarioCliente] = useState(CLIENTE_DEFAULT);
   const [producto, setProducto] = useState("");
+  const [productoCustom, setProductoCustom] = useState(false);
   const [envase, setEnvase] = useState("1/2 LB");
   const [latasPorCaja, setLatasPorCaja] = useState(48);
   const [envasado, setEnvasado] = useState("");
+  const [envasadoCustom, setEnvasadoCustom] = useState(false);
   const [aceite, setAceite] = useState("");
   const [agua, setAgua] = useState("");
   const [carros, setCarros] = useState(0);
 
+  const [envasadoCajas, setEnvasadoCajas] = useState(0);
+  const [envasadoLatasSueltas, setEnvasadoLatasSueltas] = useState(0);
   const [prodCajas, setProdCajas] = useState(0);
   const [prodLatas, setProdLatas] = useState(0);
   const [realCajas, setRealCajas] = useState(0);
