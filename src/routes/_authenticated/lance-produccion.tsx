@@ -577,7 +577,22 @@ function LanceFormDialog({
         <section className="space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">I · Parámetros de producción</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Field label="Envasado (gr)"><Input value={envasado} onChange={(e) => setEnvasado(e.target.value)} placeholder="107-108 / 108-109" /></Field>
+            <Field label="Envasado (gr)">
+              {envasadoCustom ? (
+                <div className="flex gap-1">
+                  <Input value={envasado} onChange={(e) => setEnvasado(e.target.value)} placeholder="Escribir…" autoFocus />
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setEnvasadoCustom(false); setEnvasado(""); }}>↩</Button>
+                </div>
+              ) : (
+                <Select value={envasado} onValueChange={(v) => { if (v === "__custom__") { setEnvasadoCustom(true); setEnvasado(""); } else setEnvasado(v); }}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                  <SelectContent>
+                    {ENVASADO_GR_OPTS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    <SelectItem value="__custom__">✎ Escribir manualmente…</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
             <Field label="Aceite (ml)"><Input value={aceite} onChange={(e) => setAceite(e.target.value)} placeholder="45" /></Field>
             <Field label="Agua (ml)"><Input value={agua} onChange={(e) => setAgua(e.target.value)} placeholder="25 / 26" /></Field>
           </div>
