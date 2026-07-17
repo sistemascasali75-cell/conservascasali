@@ -683,6 +683,23 @@ function LanceFormDialog({
 
         <Separator />
 
+        {/* Resumen final inteligente */}
+        <ResumenFinal
+          latasPorCaja={latasPorCaja}
+          totalEnvasado={totalEnvasado}
+          totalProd={totalProd}
+          totalReal={totalReal}
+          envasadoCajas={envasadoCajas}
+          envasadoLatas={envasadoLatasSueltas}
+          prodCajas={prodCajas}
+          prodLatas={prodLatas}
+          realCajas={realCajas}
+          realLatas={realLatas}
+          insumos={insumos}
+        />
+
+        <Separator />
+
         <section className="space-y-2">
           <Label>Observaciones</Label>
           <Textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} rows={2} />
