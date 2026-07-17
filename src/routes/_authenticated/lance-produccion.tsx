@@ -59,6 +59,8 @@ type InsumoCat = { id: string; codigo: string; insumo: string; formato: string |
 
 const ENVASES = ["1/2 LB", "1 LB TALL", "TINAPON", "OTRO"];
 const LATAS_POR_CAJA_DEFAULT: Record<string, number> = { "1/2 LB": 48, "1 LB TALL": 24, "TINAPON": 24, "OTRO": 48 };
+const CLIENTE_DEFAULT = "CASALI - QALIWARMA";
+const ENVASADO_GR_OPTS = ["107 - 108", "112 - 113"];
 
 // Insumos por defecto según el reporte
 const INSUMOS_TEMPLATE: Omit<LanceInsumoRow, "orden">[] = [
