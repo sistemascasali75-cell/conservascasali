@@ -664,6 +664,7 @@ function LanceFormDialog({
                 idx={i}
                 row={r}
                 insumosCat={insumosCat}
+                insumosSalidaRecent={insumosSalidaRecent}
                 onChange={(patch) => updIns(i, patch)}
                 onRemove={() => rmIns(i)}
               />
