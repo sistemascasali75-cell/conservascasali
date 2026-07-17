@@ -228,6 +228,8 @@ function LanceProduccionPage() {
             <DialogTrigger asChild><Button><Plus className="size-4" /> Nuevo lance</Button></DialogTrigger>
             <LanceFormDialog
               insumosCat={insumosCat}
+              productosCat={productosCat}
+              insumosSalidaRecent={insumosSalidaRecent}
               onDone={() => { setOpenForm(false); qc.invalidateQueries({ queryKey: ["lances"] }); }}
             />
           </Dialog>
