@@ -122,9 +122,19 @@ function LanceProduccionPage() {
         .select("id,descripcion,envase").eq("activo", true)
         .order("descripcion");
       if (error) throw error;
-      return (data ?? []) as { id: string; descripcion: string; envase: string | null }[];
+      // Deduplicar por descripción (case-insensitive) para no mostrar el mismo producto dos veces
+      const seen = new Set<string>();
+      const unique: { id: string; descripcion: string; envase: string | null }[] = [];
+      for (const p of (data ?? []) as any[]) {
+        const k = (p.descripcion ?? "").trim().toLowerCase();
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        unique.push(p);
+      }
+      return unique;
     },
   });
+
 
   // Últimas 10 SALIDAS de insumos → catálogo filtrado para vincular
   const { data: insumosSalidaRecent = [] } = useQuery({
