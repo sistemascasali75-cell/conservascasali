@@ -478,12 +478,16 @@ function LanceFormDialog({
   const rmIns = (i: number) => setInsumos((p) => p.filter((_, idx) => idx !== i));
 
   const saveMut = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (opts: { estado: "BORRADOR" | "COMPLETO" }) => {
       if (!producto.trim()) throw new Error("Producto es requerido");
+      if (opts.estado === "COMPLETO" && totalReal <= 0 && totalEnvasado <= 0)
+        throw new Error("Ingresa el lance real o el envasado antes de guardar como completo");
       const { data: userRes } = await supabase.auth.getUser();
 
       const payload = {
         fecha, usuario_cliente: usuarioCliente, producto, envase, latas_por_caja: latasPorCaja,
+        packing: latasPorCaja,
+        estado: opts.estado,
         envasado: envasado || null, aceite: aceite || null, agua: agua || null,
         parametros_extra: [],
         carros,
@@ -502,11 +506,13 @@ function LanceFormDialog({
         .from("lances_produccion").insert(payload).select("*").single();
       if (error) throw error;
 
+      const shouldRegisterMovs = opts.estado === "COMPLETO" && registrarMovs;
+
       // Insertar insumos + registrar movimientos SALIDA en insumos_movimientos si vinculados
       for (const row of insumos) {
         if (!row.nombre.trim() || row.cantidad <= 0) continue;
         let movId: string | null = null;
-        if (registrarMovs && row.insumo_id) {
+        if (shouldRegisterMovs && row.insumo_id) {
           const { data: movData, error: movErr } = await (supabase as any).rpc("registrar_movimiento_insumo", {
             p_insumo_id: row.insumo_id,
             p_tipo: "PRODUCCION",
@@ -532,14 +538,16 @@ function LanceFormDialog({
           movimiento_insumo_id: movId,
         });
       }
+      return opts.estado;
     },
-    onSuccess: () => {
-      toast.success("Lance registrado");
+    onSuccess: (estado) => {
+      toast.success(estado === "BORRADOR" ? "Borrador guardado" : "Lance registrado");
       qc.invalidateQueries();
       onDone();
     },
     onError: (e: any) => toast.error(e.message ?? "Error al guardar"),
   });
+
 
   return (
     <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
