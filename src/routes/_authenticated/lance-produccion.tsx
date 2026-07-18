@@ -631,23 +631,22 @@ function LanceFormDialog({
 
         {/* Resumen de producción */}
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">II · Resumen de producción</h3>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">II · Resumen de producción</h3>
+            <div className="text-[11px] text-muted-foreground">
+              Ingresa el <b>total de latas</b> · se convierte en cajas + sueltas usando <b>packing = {latasPorCaja}</b>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border p-3 space-y-2 bg-sky-50/50 dark:bg-sky-950/20 border-sky-200">
-              <div className="text-xs font-semibold text-sky-700">Total envasado</div>
-              <CajasLatasInput cajas={envasadoCajas} latas={envasadoLatasSueltas} setC={setEnvasadoCajas} setL={setEnvasadoLatasSueltas} />
-              <div className="text-right text-xs">Total: <span className="font-semibold text-sky-700">{formatNumber(totalEnvasado, 0)}</span> latas</div>
-            </div>
-            <div className="rounded-lg border p-3 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground">Lance proyectado</div>
-              <CajasLatasInput cajas={prodCajas} latas={prodLatas} setC={setProdCajas} setL={setProdLatas} />
-              <div className="text-right text-xs">Total: <span className="font-semibold">{formatNumber(totalProd, 0)}</span> latas</div>
-            </div>
-            <div className="rounded-lg border p-3 space-y-2 bg-amber-50 dark:bg-amber-950/20">
-              <div className="text-xs font-semibold text-amber-700">Lance real (validado)</div>
-              <CajasLatasInput cajas={realCajas} latas={realLatas} setC={setRealCajas} setL={setRealLatas} />
-              <div className="text-right text-xs">Total: <span className="font-semibold text-emerald-700">{formatNumber(totalReal, 0)}</span> latas</div>
-            </div>
+            <SmartLatasCard tone="sky" label="Total envasado"
+              cajas={envasadoCajas} latas={envasadoLatasSueltas} lpc={latasPorCaja}
+              setC={setEnvasadoCajas} setL={setEnvasadoLatasSueltas} />
+            <SmartLatasCard tone="slate" label="Lance proyectado"
+              cajas={prodCajas} latas={prodLatas} lpc={latasPorCaja}
+              setC={setProdCajas} setL={setProdLatas} />
+            <SmartLatasCard tone="amber" label="Lance real (validado)"
+              cajas={realCajas} latas={realLatas} lpc={latasPorCaja}
+              setC={setRealCajas} setL={setRealLatas} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground">
             <div>Δ Proyectado - Real: <span className="font-semibold">{formatNumber(totalProd - totalReal, 0)}</span></div>
@@ -655,6 +654,7 @@ function LanceFormDialog({
             <div>Δ Envasado - Proyectado: <span className="font-semibold">{formatNumber(totalEnvasado - totalProd, 0)}</span></div>
           </div>
         </section>
+
 
         <Separator />
 
