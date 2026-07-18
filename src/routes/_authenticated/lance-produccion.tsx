@@ -757,14 +757,61 @@ function Field({ label, children, className }: { label: string; children: React.
   );
 }
 
-function CajasLatasInput({ cajas, latas, setC, setL }: { cajas: number; latas: number; setC: (n: number) => void; setL: (n: number) => void }) {
+function SmartLatasCard({
+  tone, label, cajas, latas, lpc, setC, setL,
+}: {
+  tone: "sky" | "slate" | "amber";
+  label: string;
+  cajas: number; latas: number; lpc: number;
+  setC: (n: number) => void; setL: (n: number) => void;
+}) {
+  const total = totalLatas(cajas, latas, lpc);
+  const toneCls = tone === "sky" ? "bg-sky-50/50 dark:bg-sky-950/20 border-sky-200"
+    : tone === "amber" ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200"
+    : "";
+  const textCls = tone === "sky" ? "text-sky-700"
+    : tone === "amber" ? "text-amber-700" : "text-muted-foreground";
+  const totalCls = tone === "sky" ? "text-sky-700"
+    : tone === "amber" ? "text-emerald-700" : "text-foreground";
+
+  const onTotalChange = (raw: string) => {
+    const n = Math.max(0, Math.floor(+raw || 0));
+    const emp = Math.max(1, lpc || 48);
+    setC(Math.floor(n / emp));
+    setL(n % emp);
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <div><Label className="text-[10px]">Cajas</Label><Input type="number" value={cajas || ""} onChange={(e) => setC(+e.target.value || 0)} /></div>
-      <div><Label className="text-[10px]">Latas sueltas</Label><Input type="number" value={latas || ""} onChange={(e) => setL(+e.target.value || 0)} /></div>
+    <div className={`rounded-lg border p-3 space-y-2 ${toneCls}`}>
+      <div className={`text-xs font-semibold ${textCls}`}>{label}</div>
+      <div>
+        <Label className="text-[10px] uppercase tracking-wider">Latas totales</Label>
+        <Input
+          type="number" min="0" step="1"
+          value={total || ""}
+          onChange={(e) => onTotalChange(e.target.value)}
+          placeholder="0"
+          className="h-10 text-lg font-bold tabular-nums"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-[10px]">Cajas</Label>
+          <Input type="number" min="0" value={cajas || ""} onChange={(e) => setC(Math.max(0, +e.target.value || 0))} className="tabular-nums" />
+        </div>
+        <div>
+          <Label className="text-[10px]">Latas sueltas</Label>
+          <Input type="number" min="0" value={latas || ""} onChange={(e) => setL(Math.max(0, +e.target.value || 0))} className="tabular-nums" />
+        </div>
+      </div>
+      <div className="text-right text-[11px] text-muted-foreground">
+        = <span className={`font-bold ${totalCls}`}>{formatNumber(total, 0)}</span> latas
+        <span className="opacity-70"> · {cajas}c × {lpc} + {latas}l</span>
+      </div>
     </div>
   );
 }
+
 
 /* ------------------------------------------------------------------------- */
 /* RESUMEN FINAL INTELIGENTE                                                  */
