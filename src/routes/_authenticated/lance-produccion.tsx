@@ -735,11 +735,15 @@ function LanceFormDialog({
         </section>
       </div>
 
-      <DialogFooter>
-        <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-          {saveMut.isPending ? "Guardando…" : "Registrar lance"}
+      <DialogFooter className="gap-2">
+        <Button variant="outline" onClick={() => saveMut.mutate({ estado: "BORRADOR" })} disabled={saveMut.isPending}>
+          {saveMut.isPending ? "Guardando…" : "Guardar borrador"}
+        </Button>
+        <Button onClick={() => saveMut.mutate({ estado: "COMPLETO" })} disabled={saveMut.isPending}>
+          {saveMut.isPending ? "Guardando…" : "Registrar lance completo"}
         </Button>
       </DialogFooter>
+
     </DialogContent>
   );
 }
