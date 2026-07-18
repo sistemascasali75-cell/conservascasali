@@ -30,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/lance-produccion")({
 type Lance = {
   id: string; numero: number; fecha: string;
   usuario_cliente: string; producto: string; envase: string; latas_por_caja: number;
+  packing?: number | null; estado?: string | null;
   envasado: string | null; aceite: string | null; agua: string | null;
   parametros_extra: { nombre: string; valor: string; unidad?: string }[];
   carros: number;
@@ -43,6 +44,7 @@ type Lance = {
   observaciones: string | null;
   created_at: string;
 };
+
 
 type LanceInsumoRow = {
   id?: string;
