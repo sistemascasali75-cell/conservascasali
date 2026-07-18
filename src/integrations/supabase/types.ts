@@ -517,6 +517,7 @@ export type Database = {
           envasado_cajas: number
           envasado_latas: number
           envase: string
+          estado: string
           fecha: string
           id: string
           lance_prod_cajas: number
@@ -534,6 +535,7 @@ export type Database = {
           merma_pruebas_latas: number
           numero: number
           observaciones: string | null
+          packing: number
           parametros_extra: Json
           producto: string
           registrado_por: string | null
@@ -549,6 +551,7 @@ export type Database = {
           envasado_cajas?: number
           envasado_latas?: number
           envase?: string
+          estado?: string
           fecha?: string
           id?: string
           lance_prod_cajas?: number
@@ -566,6 +569,7 @@ export type Database = {
           merma_pruebas_latas?: number
           numero?: number
           observaciones?: string | null
+          packing?: number
           parametros_extra?: Json
           producto?: string
           registrado_por?: string | null
@@ -581,6 +585,7 @@ export type Database = {
           envasado_cajas?: number
           envasado_latas?: number
           envase?: string
+          estado?: string
           fecha?: string
           id?: string
           lance_prod_cajas?: number
@@ -598,6 +603,7 @@ export type Database = {
           merma_pruebas_latas?: number
           numero?: number
           observaciones?: string | null
+          packing?: number
           parametros_extra?: Json
           producto?: string
           registrado_por?: string | null
