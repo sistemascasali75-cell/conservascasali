@@ -586,8 +586,17 @@ function LanceFormDialog({
                 <SelectContent>{ENVASES.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
-            <Field label="Latas por caja"><Input type="number" value={latasPorCaja} onChange={(e) => setLatasPorCaja(+e.target.value || 0)} /></Field>
+            <Field label="Packing (latas/caja)">
+              <Select value={String(latasPorCaja)} onValueChange={(v) => setLatasPorCaja(+v || 48)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="48">48 latas / caja</SelectItem>
+                  <SelectItem value="24">24 latas / caja</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
             <Field label="N° Carros"><Input type="number" value={carros} onChange={(e) => setCarros(+e.target.value || 0)} /></Field>
+
           </div>
         </section>
 
