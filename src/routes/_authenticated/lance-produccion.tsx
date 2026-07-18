@@ -30,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/lance-produccion")({
 type Lance = {
   id: string; numero: number; fecha: string;
   usuario_cliente: string; producto: string; envase: string; latas_por_caja: number;
+  packing?: number | null; estado?: string | null;
   envasado: string | null; aceite: string | null; agua: string | null;
   parametros_extra: { nombre: string; valor: string; unidad?: string }[];
   carros: number;
@@ -43,6 +44,7 @@ type Lance = {
   observaciones: string | null;
   created_at: string;
 };
+
 
 type LanceInsumoRow = {
   id?: string;
@@ -120,9 +122,19 @@ function LanceProduccionPage() {
         .select("id,descripcion,envase").eq("activo", true)
         .order("descripcion");
       if (error) throw error;
-      return (data ?? []) as { id: string; descripcion: string; envase: string | null }[];
+      // Deduplicar por descripción (case-insensitive) para no mostrar el mismo producto dos veces
+      const seen = new Set<string>();
+      const unique: { id: string; descripcion: string; envase: string | null }[] = [];
+      for (const p of (data ?? []) as any[]) {
+        const k = (p.descripcion ?? "").trim().toLowerCase();
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        unique.push(p);
+      }
+      return unique;
     },
   });
+
 
   // Últimas 10 SALIDAS de insumos → catálogo filtrado para vincular
   const { data: insumosSalidaRecent = [] } = useQuery({
@@ -466,12 +478,16 @@ function LanceFormDialog({
   const rmIns = (i: number) => setInsumos((p) => p.filter((_, idx) => idx !== i));
 
   const saveMut = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (opts: { estado: "BORRADOR" | "COMPLETO" }) => {
       if (!producto.trim()) throw new Error("Producto es requerido");
+      if (opts.estado === "COMPLETO" && totalReal <= 0 && totalEnvasado <= 0)
+        throw new Error("Ingresa el lance real o el envasado antes de guardar como completo");
       const { data: userRes } = await supabase.auth.getUser();
 
       const payload = {
         fecha, usuario_cliente: usuarioCliente, producto, envase, latas_por_caja: latasPorCaja,
+        packing: latasPorCaja,
+        estado: opts.estado,
         envasado: envasado || null, aceite: aceite || null, agua: agua || null,
         parametros_extra: [],
         carros,
@@ -490,11 +506,13 @@ function LanceFormDialog({
         .from("lances_produccion").insert(payload).select("*").single();
       if (error) throw error;
 
+      const shouldRegisterMovs = opts.estado === "COMPLETO" && registrarMovs;
+
       // Insertar insumos + registrar movimientos SALIDA en insumos_movimientos si vinculados
       for (const row of insumos) {
         if (!row.nombre.trim() || row.cantidad <= 0) continue;
         let movId: string | null = null;
-        if (registrarMovs && row.insumo_id) {
+        if (shouldRegisterMovs && row.insumo_id) {
           const { data: movData, error: movErr } = await (supabase as any).rpc("registrar_movimiento_insumo", {
             p_insumo_id: row.insumo_id,
             p_tipo: "PRODUCCION",
@@ -520,14 +538,16 @@ function LanceFormDialog({
           movimiento_insumo_id: movId,
         });
       }
+      return opts.estado;
     },
-    onSuccess: () => {
-      toast.success("Lance registrado");
+    onSuccess: (estado) => {
+      toast.success(estado === "BORRADOR" ? "Borrador guardado" : "Lance registrado");
       qc.invalidateQueries();
       onDone();
     },
     onError: (e: any) => toast.error(e.message ?? "Error al guardar"),
   });
+
 
   return (
     <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -566,8 +586,17 @@ function LanceFormDialog({
                 <SelectContent>{ENVASES.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
-            <Field label="Latas por caja"><Input type="number" value={latasPorCaja} onChange={(e) => setLatasPorCaja(+e.target.value || 0)} /></Field>
+            <Field label="Packing (latas/caja)">
+              <Select value={String(latasPorCaja)} onValueChange={(v) => setLatasPorCaja(+v || 48)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="48">48 latas / caja</SelectItem>
+                  <SelectItem value="24">24 latas / caja</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
             <Field label="N° Carros"><Input type="number" value={carros} onChange={(e) => setCarros(+e.target.value || 0)} /></Field>
+
           </div>
         </section>
 
@@ -602,23 +631,22 @@ function LanceFormDialog({
 
         {/* Resumen de producción */}
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">II · Resumen de producción</h3>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">II · Resumen de producción</h3>
+            <div className="text-[11px] text-muted-foreground">
+              Ingresa el <b>total de latas</b> · se convierte en cajas + sueltas usando <b>packing = {latasPorCaja}</b>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border p-3 space-y-2 bg-sky-50/50 dark:bg-sky-950/20 border-sky-200">
-              <div className="text-xs font-semibold text-sky-700">Total envasado</div>
-              <CajasLatasInput cajas={envasadoCajas} latas={envasadoLatasSueltas} setC={setEnvasadoCajas} setL={setEnvasadoLatasSueltas} />
-              <div className="text-right text-xs">Total: <span className="font-semibold text-sky-700">{formatNumber(totalEnvasado, 0)}</span> latas</div>
-            </div>
-            <div className="rounded-lg border p-3 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground">Lance proyectado</div>
-              <CajasLatasInput cajas={prodCajas} latas={prodLatas} setC={setProdCajas} setL={setProdLatas} />
-              <div className="text-right text-xs">Total: <span className="font-semibold">{formatNumber(totalProd, 0)}</span> latas</div>
-            </div>
-            <div className="rounded-lg border p-3 space-y-2 bg-amber-50 dark:bg-amber-950/20">
-              <div className="text-xs font-semibold text-amber-700">Lance real (validado)</div>
-              <CajasLatasInput cajas={realCajas} latas={realLatas} setC={setRealCajas} setL={setRealLatas} />
-              <div className="text-right text-xs">Total: <span className="font-semibold text-emerald-700">{formatNumber(totalReal, 0)}</span> latas</div>
-            </div>
+            <SmartLatasCard tone="sky" label="Total envasado"
+              cajas={envasadoCajas} latas={envasadoLatasSueltas} lpc={latasPorCaja}
+              setC={setEnvasadoCajas} setL={setEnvasadoLatasSueltas} />
+            <SmartLatasCard tone="slate" label="Lance proyectado"
+              cajas={prodCajas} latas={prodLatas} lpc={latasPorCaja}
+              setC={setProdCajas} setL={setProdLatas} />
+            <SmartLatasCard tone="amber" label="Lance real (validado)"
+              cajas={realCajas} latas={realLatas} lpc={latasPorCaja}
+              setC={setRealCajas} setL={setRealLatas} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground">
             <div>Δ Proyectado - Real: <span className="font-semibold">{formatNumber(totalProd - totalReal, 0)}</span></div>
@@ -626,6 +654,7 @@ function LanceFormDialog({
             <div>Δ Envasado - Proyectado: <span className="font-semibold">{formatNumber(totalEnvasado - totalProd, 0)}</span></div>
           </div>
         </section>
+
 
         <Separator />
 
@@ -706,11 +735,15 @@ function LanceFormDialog({
         </section>
       </div>
 
-      <DialogFooter>
-        <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-          {saveMut.isPending ? "Guardando…" : "Registrar lance"}
+      <DialogFooter className="gap-2">
+        <Button variant="outline" onClick={() => saveMut.mutate({ estado: "BORRADOR" })} disabled={saveMut.isPending}>
+          {saveMut.isPending ? "Guardando…" : "Guardar borrador"}
+        </Button>
+        <Button onClick={() => saveMut.mutate({ estado: "COMPLETO" })} disabled={saveMut.isPending}>
+          {saveMut.isPending ? "Guardando…" : "Registrar lance completo"}
         </Button>
       </DialogFooter>
+
     </DialogContent>
   );
 }
@@ -724,14 +757,61 @@ function Field({ label, children, className }: { label: string; children: React.
   );
 }
 
-function CajasLatasInput({ cajas, latas, setC, setL }: { cajas: number; latas: number; setC: (n: number) => void; setL: (n: number) => void }) {
+function SmartLatasCard({
+  tone, label, cajas, latas, lpc, setC, setL,
+}: {
+  tone: "sky" | "slate" | "amber";
+  label: string;
+  cajas: number; latas: number; lpc: number;
+  setC: (n: number) => void; setL: (n: number) => void;
+}) {
+  const total = totalLatas(cajas, latas, lpc);
+  const toneCls = tone === "sky" ? "bg-sky-50/50 dark:bg-sky-950/20 border-sky-200"
+    : tone === "amber" ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200"
+    : "";
+  const textCls = tone === "sky" ? "text-sky-700"
+    : tone === "amber" ? "text-amber-700" : "text-muted-foreground";
+  const totalCls = tone === "sky" ? "text-sky-700"
+    : tone === "amber" ? "text-emerald-700" : "text-foreground";
+
+  const onTotalChange = (raw: string) => {
+    const n = Math.max(0, Math.floor(+raw || 0));
+    const emp = Math.max(1, lpc || 48);
+    setC(Math.floor(n / emp));
+    setL(n % emp);
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <div><Label className="text-[10px]">Cajas</Label><Input type="number" value={cajas || ""} onChange={(e) => setC(+e.target.value || 0)} /></div>
-      <div><Label className="text-[10px]">Latas sueltas</Label><Input type="number" value={latas || ""} onChange={(e) => setL(+e.target.value || 0)} /></div>
+    <div className={`rounded-lg border p-3 space-y-2 ${toneCls}`}>
+      <div className={`text-xs font-semibold ${textCls}`}>{label}</div>
+      <div>
+        <Label className="text-[10px] uppercase tracking-wider">Latas totales</Label>
+        <Input
+          type="number" min="0" step="1"
+          value={total || ""}
+          onChange={(e) => onTotalChange(e.target.value)}
+          placeholder="0"
+          className="h-10 text-lg font-bold tabular-nums"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-[10px]">Cajas</Label>
+          <Input type="number" min="0" value={cajas || ""} onChange={(e) => setC(Math.max(0, +e.target.value || 0))} className="tabular-nums" />
+        </div>
+        <div>
+          <Label className="text-[10px]">Latas sueltas</Label>
+          <Input type="number" min="0" value={latas || ""} onChange={(e) => setL(Math.max(0, +e.target.value || 0))} className="tabular-nums" />
+        </div>
+      </div>
+      <div className="text-right text-[11px] text-muted-foreground">
+        = <span className={`font-bold ${totalCls}`}>{formatNumber(total, 0)}</span> latas
+        <span className="opacity-70"> · {cajas}c × {lpc} + {latas}l</span>
+      </div>
     </div>
   );
 }
+
 
 /* ------------------------------------------------------------------------- */
 /* RESUMEN FINAL INTELIGENTE                                                  */
