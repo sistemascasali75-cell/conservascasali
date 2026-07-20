@@ -1090,6 +1090,45 @@ export type Database = {
         }
         Relationships: []
       }
+      vales: {
+        Row: {
+          autorizado: string | null
+          created_at: string
+          descripcion: string | null
+          estado: string
+          fecha: string
+          id: string
+          nro_vale: number
+          observacion: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          autorizado?: string | null
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha?: string
+          id?: string
+          nro_vale: number
+          observacion?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          autorizado?: string | null
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha?: string
+          id?: string
+          nro_vale?: number
+          observacion?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ventas_correlativos: {
         Row: {
           serie: string
