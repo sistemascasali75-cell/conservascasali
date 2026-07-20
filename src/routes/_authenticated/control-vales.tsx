@@ -61,7 +61,7 @@ function ControlVales() {
   const { data: vales = [] } = useQuery({
     queryKey: ["vales"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vales" as any).select("*").order("nro_vale", { ascending: false }).order("fecha", { ascending: false });
+      const { data, error } = await (supabase as any).from("vales").select("*").order("nro_vale", { ascending: false }).order("fecha", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Vale[];
     },
