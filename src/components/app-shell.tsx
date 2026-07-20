@@ -82,6 +82,7 @@ const items: Item[] = [
   { to: "/insumos/movimientos", label: "Movimientos insumos", icon: Shuffle, section: "Insumos" },
   { to: "/insumos/reportes", label: "Reportes insumos", icon: BarChart3, section: "Insumos" },
   { to: "/insumos/control", label: "Control insumos", icon: ClipboardList, section: "Insumos", roles: ["ADMIN", "INSUMOS"] },
+  { to: "/control-vales", label: "Control de vales", icon: Ticket, section: "Insumos" },
   { to: "/insumos/catalogo", label: "Catálogo insumos", icon: Settings, section: "Insumos", roles: ["ADMIN", "OPERADOR", "INSUMOS"] },
 
   { to: "/ventas", label: "Panel de ventas", icon: Store, section: "Ventas" },
