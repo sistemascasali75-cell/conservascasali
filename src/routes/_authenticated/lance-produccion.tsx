@@ -289,9 +289,8 @@ function LanceProduccionPage() {
                     <TableHead>Producto</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Envase</TableHead>
-                    <TableHead className="text-right">Cajas real</TableHead>
-                    <TableHead className="text-right">Latas real</TableHead>
-                    <TableHead className="text-right">Total latas</TableHead>
+                    <TableHead className="text-right">Real (latas)</TableHead>
+                    <TableHead className="text-right">Proyectado (latas)</TableHead>
                     <TableHead className="text-right">Mermas</TableHead>
                     <TableHead className="w-24"></TableHead>
                   </TableRow>
