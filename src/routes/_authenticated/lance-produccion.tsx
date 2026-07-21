@@ -641,10 +641,10 @@ function LanceFormDialog({
             <SmartLatasCard tone="sky" label="Total envasado"
               cajas={envasadoCajas} latas={envasadoLatasSueltas} lpc={latasPorCaja}
               setC={setEnvasadoCajas} setL={setEnvasadoLatasSueltas} />
-            <SmartLatasCard tone="slate" label="Lance proyectado"
+            <SmartLatasCard tone="slate" label="Proyectado (latas)"
               cajas={prodCajas} latas={prodLatas} lpc={latasPorCaja}
               setC={setProdCajas} setL={setProdLatas} />
-            <SmartLatasCard tone="amber" label="Lance real (validado)"
+            <SmartLatasCard tone="amber" label="Real (latas)"
               cajas={realCajas} latas={realLatas} lpc={latasPorCaja}
               setC={setRealCajas} setL={setRealLatas} />
           </div>
