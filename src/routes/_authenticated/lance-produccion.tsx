@@ -783,7 +783,10 @@ function SmartLatasCard({
 
   return (
     <div className={`rounded-lg border p-3 space-y-2 ${toneCls}`}>
-      <div className={`text-xs font-semibold ${textCls}`}>{label}</div>
+      <div className="flex items-baseline justify-between flex-wrap gap-1">
+        <span className={`text-xs font-semibold ${textCls}`}>{label}</span>
+        <span className="text-sm font-bold tabular-nums">{formatNumber(cajas, 0)} cajas <span className="text-[10px] font-normal text-muted-foreground">({formatNumber(total, 0)} latas)</span></span>
+      </div>
       <div>
         <Label className="text-[10px] uppercase tracking-wider">Latas totales</Label>
         <Input
@@ -805,7 +808,7 @@ function SmartLatasCard({
         </div>
       </div>
       <div className="text-right text-[11px] text-muted-foreground">
-        = <span className={`font-bold ${totalCls}`}>{formatNumber(total, 0)}</span> latas
+        Total <span className={`font-bold ${totalCls}`}>{formatNumber(total, 0)}</span> latas
         <span className="opacity-70"> · {cajas}c × {lpc} + {latas}l</span>
       </div>
     </div>
