@@ -188,7 +188,7 @@ function LanceProduccionPage() {
   }, [lances]);
 
   const exportLista = async (kind: "xlsx" | "pdf") => {
-    const headers = ["N°", "Fecha", "Producto", "Cliente", "Envase", "Cajas Real", "Latas Real", "Total Latas Real", "Mermas (latas)"];
+    const headers = ["N°", "Fecha", "Producto", "Cliente", "Envase", "Cajas Real (latas)", "Cajas Proyectado (latas)", "Mermas (latas)"];
     const rows = filtered.map((l) => {
       const mermaLatas =
         totalLatas(l.merma_pruebas_cajas, l.merma_pruebas_latas, l.latas_por_caja) +
@@ -197,8 +197,8 @@ function LanceProduccionPage() {
         totalLatas(l.merma_muestras_cajas, l.merma_muestras_latas, l.latas_por_caja);
       return [
         l.numero, l.fecha, l.producto, l.usuario_cliente, l.envase,
-        l.lance_real_cajas, l.lance_real_latas,
-        totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja),
+        `${formatNumber(l.lance_real_cajas, 0)} cajas (${formatNumber(totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja), 0)} latas)`,
+        `${formatNumber(l.lance_prod_cajas, 0)} cajas (${formatNumber(totalLatas(l.lance_prod_cajas, l.lance_prod_latas, l.latas_por_caja), 0)} latas)`,
         mermaLatas,
       ];
     });
@@ -209,7 +209,7 @@ function LanceProduccionPage() {
       filename: `lances-produccion.${kind}`,
       summary: [
         { label: "Lances", value: kpis.totalLances },
-        { label: "Total latas real", value: formatNumber(kpis.totalReal, 0) },
+        { label: "Total real", value: `${formatNumber(kpis.totalReal / Math.max(1, latasPorCaja), 0)} cajas (${formatNumber(kpis.totalReal, 0)} latas)` },
         { label: "Total mermas", value: formatNumber(kpis.totalMermas, 0) },
       ],
     };
