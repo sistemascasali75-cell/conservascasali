@@ -251,8 +251,8 @@ function LanceProduccionPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KPI icon={<ClipboardList className="size-4" />} label="Lances" value={kpis.totalLances} />
-        <KPI icon={<Package className="size-4" />} label="Total latas (real)" value={formatNumber(kpis.totalReal, 0)} tone="emerald" />
-        <KPI icon={<Factory className="size-4" />} label="Total latas (proyectado)" value={formatNumber(kpis.totalProd, 0)} />
+        <KPI icon={<Package className="size-4" />} label="Real (cajas/latas)" value={`${formatNumber(lances.reduce((a, l) => a + l.lance_real_cajas, 0), 0)} / ${formatNumber(kpis.totalReal, 0)}`} tone="emerald" />
+        <KPI icon={<Factory className="size-4" />} label="Proyectado (cajas/latas)" value={`${formatNumber(lances.reduce((a, l) => a + l.lance_prod_cajas, 0), 0)} / ${formatNumber(kpis.totalProd, 0)}`} />
         <KPI icon={<TrendingDown className="size-4" />} label="Mermas (latas)" value={formatNumber(kpis.totalMermas, 0)} tone="rose" />
       </div>
 
