@@ -943,9 +943,9 @@ function ResumenCard({ tone, label, cajas, latas, total, lpc }: {
   return (
     <div className={`rounded-lg border p-3 ${toneCls}`}>
       <div className={`text-[11px] uppercase tracking-wider font-semibold ${textCls}`}>{label}</div>
-      <div className="mt-1 text-2xl font-bold tabular-nums">{formatNumber(total, 0)} <span className="text-xs font-normal text-muted-foreground">latas</span></div>
+      <div className="mt-1 text-2xl font-bold tabular-nums">{formatNumber(cajas, 0)} <span className="text-xs font-normal text-muted-foreground">cajas ({formatNumber(total, 0)} latas)</span></div>
       <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
-        {formatNumber(cajas, 0)} cajas + {latas} latas sueltas · ×{lpc}
+        {latas} latas sueltas · ×{lpc}
       </div>
     </div>
   );
