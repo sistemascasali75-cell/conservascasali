@@ -188,7 +188,7 @@ function LanceProduccionPage() {
   }, [lances]);
 
   const exportLista = async (kind: "xlsx" | "pdf") => {
-    const headers = ["N°", "Fecha", "Producto", "Cliente", "Envase", "Cajas Real", "Latas Real", "Total Latas Real", "Mermas (latas)"];
+    const headers = ["N°", "Fecha", "Producto", "Cliente", "Envase", "Cajas Real (latas)", "Cajas Proyectado (latas)", "Mermas (latas)"];
     const rows = filtered.map((l) => {
       const mermaLatas =
         totalLatas(l.merma_pruebas_cajas, l.merma_pruebas_latas, l.latas_por_caja) +
@@ -197,8 +197,8 @@ function LanceProduccionPage() {
         totalLatas(l.merma_muestras_cajas, l.merma_muestras_latas, l.latas_por_caja);
       return [
         l.numero, l.fecha, l.producto, l.usuario_cliente, l.envase,
-        l.lance_real_cajas, l.lance_real_latas,
-        totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja),
+        `${formatNumber(l.lance_real_cajas, 0)} cajas (${formatNumber(totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja), 0)} latas)`,
+        `${formatNumber(l.lance_prod_cajas, 0)} cajas (${formatNumber(totalLatas(l.lance_prod_cajas, l.lance_prod_latas, l.latas_por_caja), 0)} latas)`,
         mermaLatas,
       ];
     });
@@ -209,7 +209,7 @@ function LanceProduccionPage() {
       filename: `lances-produccion.${kind}`,
       summary: [
         { label: "Lances", value: kpis.totalLances },
-        { label: "Total latas real", value: formatNumber(kpis.totalReal, 0) },
+        { label: "Total real", value: `${formatNumber(filtered.reduce((a, l) => a + l.lance_real_cajas, 0), 0)} cajas (${formatNumber(kpis.totalReal, 0)} latas)` },
         { label: "Total mermas", value: formatNumber(kpis.totalMermas, 0) },
       ],
     };
@@ -251,8 +251,8 @@ function LanceProduccionPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KPI icon={<ClipboardList className="size-4" />} label="Lances" value={kpis.totalLances} />
-        <KPI icon={<Package className="size-4" />} label="Total latas (real)" value={formatNumber(kpis.totalReal, 0)} tone="emerald" />
-        <KPI icon={<Factory className="size-4" />} label="Total latas (proyectado)" value={formatNumber(kpis.totalProd, 0)} />
+        <KPI icon={<Package className="size-4" />} label="Real (cajas/latas)" value={`${formatNumber(lances.reduce((a, l) => a + l.lance_real_cajas, 0), 0)} / ${formatNumber(kpis.totalReal, 0)}`} tone="emerald" />
+        <KPI icon={<Factory className="size-4" />} label="Proyectado (cajas/latas)" value={`${formatNumber(lances.reduce((a, l) => a + l.lance_prod_cajas, 0), 0)} / ${formatNumber(kpis.totalProd, 0)}`} />
         <KPI icon={<TrendingDown className="size-4" />} label="Mermas (latas)" value={formatNumber(kpis.totalMermas, 0)} tone="rose" />
       </div>
 
@@ -289,17 +289,16 @@ function LanceProduccionPage() {
                     <TableHead>Producto</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Envase</TableHead>
-                    <TableHead className="text-right">Cajas real</TableHead>
-                    <TableHead className="text-right">Latas real</TableHead>
-                    <TableHead className="text-right">Total latas</TableHead>
+                    <TableHead className="text-right">Real (latas)</TableHead>
+                    <TableHead className="text-right">Proyectado (latas)</TableHead>
                     <TableHead className="text-right">Mermas</TableHead>
                     <TableHead className="w-24"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading && <TableRow><TableCell colSpan={10} className="text-center py-6">Cargando…</TableCell></TableRow>}
+                  {isLoading && <TableRow><TableCell colSpan={9} className="text-center py-6">Cargando…</TableCell></TableRow>}
                   {!isLoading && filtered.length === 0 && (
-                    <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">Sin lances en el período</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Sin lances en el período</TableCell></TableRow>
                   )}
                   {filtered.map((l) => {
                     const mermaLatas =
@@ -314,9 +313,14 @@ function LanceProduccionPage() {
                         <TableCell className="font-medium">{l.producto}</TableCell>
                         <TableCell className="text-xs">{l.usuario_cliente}</TableCell>
                         <TableCell><Badge variant="outline">{l.envase}</Badge></TableCell>
-                        <TableCell className="text-right">{formatNumber(l.lance_real_cajas, 0)}</TableCell>
-                        <TableCell className="text-right">{formatNumber(l.lance_real_latas, 0)}</TableCell>
-                        <TableCell className="text-right font-semibold text-emerald-700">{formatNumber(totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja), 0)}</TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-semibold text-emerald-700">{formatNumber(l.lance_real_cajas, 0)} cajas</span>
+                          <div className="text-[10px] text-muted-foreground">({formatNumber(totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja), 0)} latas)</div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-semibold">{formatNumber(l.lance_prod_cajas, 0)} cajas</span>
+                          <div className="text-[10px] text-muted-foreground">({formatNumber(totalLatas(l.lance_prod_cajas, l.lance_prod_latas, l.latas_por_caja), 0)} latas)</div>
+                        </TableCell>
                         <TableCell className="text-right text-rose-600">{formatNumber(mermaLatas, 0)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -641,10 +645,10 @@ function LanceFormDialog({
             <SmartLatasCard tone="sky" label="Total envasado"
               cajas={envasadoCajas} latas={envasadoLatasSueltas} lpc={latasPorCaja}
               setC={setEnvasadoCajas} setL={setEnvasadoLatasSueltas} />
-            <SmartLatasCard tone="slate" label="Lance proyectado"
+            <SmartLatasCard tone="slate" label="Proyectado (latas)"
               cajas={prodCajas} latas={prodLatas} lpc={latasPorCaja}
               setC={setProdCajas} setL={setProdLatas} />
-            <SmartLatasCard tone="amber" label="Lance real (validado)"
+            <SmartLatasCard tone="amber" label="Real (latas)"
               cajas={realCajas} latas={realLatas} lpc={latasPorCaja}
               setC={setRealCajas} setL={setRealLatas} />
           </div>
@@ -783,7 +787,10 @@ function SmartLatasCard({
 
   return (
     <div className={`rounded-lg border p-3 space-y-2 ${toneCls}`}>
-      <div className={`text-xs font-semibold ${textCls}`}>{label}</div>
+      <div className="flex items-baseline justify-between flex-wrap gap-1">
+        <span className={`text-xs font-semibold ${textCls}`}>{label}</span>
+        <span className="text-sm font-bold tabular-nums">{formatNumber(cajas, 0)} cajas <span className="text-[10px] font-normal text-muted-foreground">({formatNumber(total, 0)} latas)</span></span>
+      </div>
       <div>
         <Label className="text-[10px] uppercase tracking-wider">Latas totales</Label>
         <Input
@@ -805,7 +812,7 @@ function SmartLatasCard({
         </div>
       </div>
       <div className="text-right text-[11px] text-muted-foreground">
-        = <span className={`font-bold ${totalCls}`}>{formatNumber(total, 0)}</span> latas
+        Total <span className={`font-bold ${totalCls}`}>{formatNumber(total, 0)}</span> latas
         <span className="opacity-70"> · {cajas}c × {lpc} + {latas}l</span>
       </div>
     </div>
@@ -940,9 +947,9 @@ function ResumenCard({ tone, label, cajas, latas, total, lpc }: {
   return (
     <div className={`rounded-lg border p-3 ${toneCls}`}>
       <div className={`text-[11px] uppercase tracking-wider font-semibold ${textCls}`}>{label}</div>
-      <div className="mt-1 text-2xl font-bold tabular-nums">{formatNumber(total, 0)} <span className="text-xs font-normal text-muted-foreground">latas</span></div>
+      <div className="mt-1 text-2xl font-bold tabular-nums">{formatNumber(cajas, 0)} <span className="text-xs font-normal text-muted-foreground">cajas ({formatNumber(total, 0)} latas)</span></div>
       <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
-        {formatNumber(cajas, 0)} cajas + {latas} latas sueltas · ×{lpc}
+        {latas} latas sueltas · ×{lpc}
       </div>
     </div>
   );
