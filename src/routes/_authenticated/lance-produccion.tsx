@@ -209,7 +209,7 @@ function LanceProduccionPage() {
       filename: `lances-produccion.${kind}`,
       summary: [
         { label: "Lances", value: kpis.totalLances },
-        { label: "Total real", value: `${formatNumber(kpis.totalReal / Math.max(1, latasPorCaja), 0)} cajas (${formatNumber(kpis.totalReal, 0)} latas)` },
+        { label: "Total real", value: `${formatNumber(filtered.reduce((a, l) => a + l.lance_real_cajas, 0), 0)} cajas (${formatNumber(kpis.totalReal, 0)} latas)` },
         { label: "Total mermas", value: formatNumber(kpis.totalMermas, 0) },
       ],
     };
