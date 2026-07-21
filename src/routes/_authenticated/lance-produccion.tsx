@@ -296,9 +296,9 @@ function LanceProduccionPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading && <TableRow><TableCell colSpan={10} className="text-center py-6">Cargando…</TableCell></TableRow>}
+                  {isLoading && <TableRow><TableCell colSpan={9} className="text-center py-6">Cargando…</TableCell></TableRow>}
                   {!isLoading && filtered.length === 0 && (
-                    <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">Sin lances en el período</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Sin lances en el período</TableCell></TableRow>
                   )}
                   {filtered.map((l) => {
                     const mermaLatas =
@@ -313,9 +313,14 @@ function LanceProduccionPage() {
                         <TableCell className="font-medium">{l.producto}</TableCell>
                         <TableCell className="text-xs">{l.usuario_cliente}</TableCell>
                         <TableCell><Badge variant="outline">{l.envase}</Badge></TableCell>
-                        <TableCell className="text-right">{formatNumber(l.lance_real_cajas, 0)}</TableCell>
-                        <TableCell className="text-right">{formatNumber(l.lance_real_latas, 0)}</TableCell>
-                        <TableCell className="text-right font-semibold text-emerald-700">{formatNumber(totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja), 0)}</TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-semibold text-emerald-700">{formatNumber(l.lance_real_cajas, 0)} cajas</span>
+                          <div className="text-[10px] text-muted-foreground">({formatNumber(totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja), 0)} latas)</div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-semibold">{formatNumber(l.lance_prod_cajas, 0)} cajas</span>
+                          <div className="text-[10px] text-muted-foreground">({formatNumber(totalLatas(l.lance_prod_cajas, l.lance_prod_latas, l.latas_por_caja), 0)} latas)</div>
+                        </TableCell>
                         <TableCell className="text-right text-rose-600">{formatNumber(mermaLatas, 0)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
