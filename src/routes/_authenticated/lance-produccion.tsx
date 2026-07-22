@@ -330,14 +330,16 @@ function LanceProduccionPage() {
                         <TableCell className="text-right text-rose-600">{formatNumber(mermaLatas, 0)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => setOpenDetail(l)}><Eye className="size-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => setOpenDetail(l)} title="Ver detalle"><Eye className="size-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => { setEditing(l); setOpenForm(true); }} title="Editar"><Pencil className="size-4" /></Button>
                             {isAdmin && (
                               <Button size="icon" variant="ghost" onClick={() => {
                                 if (confirm(`¿Eliminar lance #${l.numero}?`)) delMut.mutate(l.id);
-                              }}><Trash2 className="size-4 text-rose-600" /></Button>
+                              }} title="Eliminar"><Trash2 className="size-4 text-rose-600" /></Button>
                             )}
                           </div>
                         </TableCell>
+
                       </TableRow>
                     );
                   })}
