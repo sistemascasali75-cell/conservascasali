@@ -601,7 +601,7 @@ function LanceFormDialog({
   return (
     <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2"><Factory className="size-5" /> Nuevo Lance de Producción</DialogTitle>
+        <DialogTitle className="flex items-center gap-2"><Factory className="size-5" /> {isEdit ? `Editar Lance #${initial?.numero}` : "Nuevo Lance de Producción"}</DialogTitle>
       </DialogHeader>
 
       <div className="space-y-6">
