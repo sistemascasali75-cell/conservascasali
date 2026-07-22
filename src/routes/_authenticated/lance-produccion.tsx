@@ -430,42 +430,67 @@ function ResumenPorProducto({ lances }: { lances: Lance[] }) {
 /* ------------------------------------------------------------------------- */
 
 function LanceFormDialog({
-  insumosCat, productosCat, insumosSalidaRecent, onDone,
+  initial, insumosCat, productosCat, insumosSalidaRecent, onDone,
 }: {
+  initial?: Lance | null;
   insumosCat: InsumoCat[];
   productosCat: { id: string; descripcion: string; envase: string | null }[];
   insumosSalidaRecent: string[];
   onDone: () => void;
 }) {
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
-  const [usuarioCliente, setUsuarioCliente] = useState(CLIENTE_DEFAULT);
-  const [producto, setProducto] = useState("");
-  const [productoCustom, setProductoCustom] = useState(false);
-  const [envase, setEnvase] = useState("1/2 LB");
-  const [latasPorCaja, setLatasPorCaja] = useState(48);
-  const [envasado, setEnvasado] = useState("");
-  const [envasadoCustom, setEnvasadoCustom] = useState(false);
-  const [aceite, setAceite] = useState("");
-  const [agua, setAgua] = useState("");
-  const [carros, setCarros] = useState(0);
+  const isEdit = !!initial;
+  const [fecha, setFecha] = useState(initial?.fecha ?? new Date().toISOString().slice(0, 10));
+  const [usuarioCliente, setUsuarioCliente] = useState(initial?.usuario_cliente ?? CLIENTE_DEFAULT);
+  const [producto, setProducto] = useState(initial?.producto ?? "");
+  const [productoCustom, setProductoCustom] = useState(!!initial && !productosCat.some(p => p.descripcion === initial.producto));
+  const [envase, setEnvase] = useState(initial?.envase ?? "1/2 LB");
+  const [latasPorCaja, setLatasPorCaja] = useState(initial?.latas_por_caja ?? 48);
+  const [envasado, setEnvasado] = useState(initial?.envasado ?? "");
+  const [envasadoCustom, setEnvasadoCustom] = useState(!!initial?.envasado && !ENVASADO_GR_OPTS.includes(initial.envasado));
+  const [aceite, setAceite] = useState(initial?.aceite ?? "");
+  const [agua, setAgua] = useState(initial?.agua ?? "");
+  const [carros, setCarros] = useState(initial?.carros ?? 0);
 
-  const [envasadoCajas, setEnvasadoCajas] = useState(0);
-  const [envasadoLatasSueltas, setEnvasadoLatasSueltas] = useState(0);
-  const [prodCajas, setProdCajas] = useState(0);
-  const [prodLatas, setProdLatas] = useState(0);
-  const [realCajas, setRealCajas] = useState(0);
-  const [realLatas, setRealLatas] = useState(0);
+  const [envasadoCajas, setEnvasadoCajas] = useState(initial?.envasado_cajas ?? 0);
+  const [envasadoLatasSueltas, setEnvasadoLatasSueltas] = useState(initial?.envasado_latas ?? 0);
+  const [prodCajas, setProdCajas] = useState(initial?.lance_prod_cajas ?? 0);
+  const [prodLatas, setProdLatas] = useState(initial?.lance_prod_latas ?? 0);
+  const [realCajas, setRealCajas] = useState(initial?.lance_real_cajas ?? 0);
+  const [realLatas, setRealLatas] = useState(initial?.lance_real_latas ?? 0);
 
-  const [mPruebas, setMPruebas] = useState({ c: 0, l: 0 });
-  const [mMalas, setMMalas] = useState({ c: 0, l: 0 });
-  const [mMaquina, setMMaquina] = useState({ c: 0, l: 0 });
-  const [mMuestras, setMMuestras] = useState({ c: 0, l: 0 });
+  const [mPruebas, setMPruebas] = useState({ c: initial?.merma_pruebas_cajas ?? 0, l: initial?.merma_pruebas_latas ?? 0 });
+  const [mMalas, setMMalas] = useState({ c: initial?.merma_malas_cajas ?? 0, l: initial?.merma_malas_latas ?? 0 });
+  const [mMaquina, setMMaquina] = useState({ c: initial?.merma_maquina_cajas ?? 0, l: initial?.merma_maquina_latas ?? 0 });
+  const [mMuestras, setMMuestras] = useState({ c: initial?.merma_muestras_cajas ?? 0, l: initial?.merma_muestras_latas ?? 0 });
 
-  const [observaciones, setObservaciones] = useState("");
+  const [observaciones, setObservaciones] = useState(initial?.observaciones ?? "");
   const [insumos, setInsumos] = useState<LanceInsumoRow[]>(
     INSUMOS_TEMPLATE.map((t, i) => ({ ...t, orden: i })),
   );
-  const [registrarMovs, setRegistrarMovs] = useState(true);
+  const [insumosLoaded, setInsumosLoaded] = useState(!isEdit);
+  const [registrarMovs, setRegistrarMovs] = useState(!isEdit);
+
+  // Cargar insumos existentes al editar
+  const { data: existingInsumos } = useQuery({
+    queryKey: ["lance-insumos-edit", initial?.id],
+    enabled: isEdit,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("lance_insumos")
+        .select("*").eq("lance_id", initial!.id).order("orden");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+  if (isEdit && existingInsumos && !insumosLoaded) {
+    setInsumos(existingInsumos.map((r: any, i: number) => ({
+      id: r.id, orden: r.orden ?? i,
+      insumo_id: r.insumo_id, nombre: r.nombre ?? "",
+      presentacion: r.presentacion ?? "", cantidad: Number(r.cantidad) || 0,
+      observacion: r.observacion, movimiento_insumo_id: r.movimiento_insumo_id,
+    })));
+    setInsumosLoaded(true);
+  }
+
 
   const totalEnvasado = totalLatas(envasadoCajas, envasadoLatasSueltas, latasPorCaja);
   const totalProd = totalLatas(prodCajas, prodLatas, latasPorCaja);
