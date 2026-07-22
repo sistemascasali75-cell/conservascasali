@@ -85,7 +85,9 @@ function LanceProduccionPage() {
   const { isAdmin } = useRoles();
   const qc = useQueryClient();
   const [openForm, setOpenForm] = useState(false);
+  const [editing, setEditing] = useState<Lance | null>(null);
   const [openDetail, setOpenDetail] = useState<Lance | null>(null);
+
   const today = new Date().toISOString().slice(0, 10);
   const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const [from, setFrom] = useState(monthAgo);
