@@ -590,7 +590,7 @@ function LanceFormDialog({
 
     },
     onSuccess: (estado) => {
-      toast.success(estado === "BORRADOR" ? "Borrador guardado" : "Lance registrado");
+      toast.success(isEdit ? "Lance actualizado" : (estado === "BORRADOR" ? "Borrador guardado" : "Lance registrado"));
       qc.invalidateQueries();
       onDone();
     },
