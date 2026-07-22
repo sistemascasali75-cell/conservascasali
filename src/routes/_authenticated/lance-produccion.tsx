@@ -239,15 +239,18 @@ function LanceProduccionPage() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => exportLista("xlsx")}><FileSpreadsheet className="size-4" /> Excel</Button>
           <Button variant="outline" onClick={() => exportLista("pdf")}><FileText className="size-4" /> PDF</Button>
-          <Dialog open={openForm} onOpenChange={setOpenForm}>
-            <DialogTrigger asChild><Button><Plus className="size-4" /> Nuevo lance</Button></DialogTrigger>
+          <Dialog open={openForm} onOpenChange={(o) => { setOpenForm(o); if (!o) setEditing(null); }}>
+            <DialogTrigger asChild><Button onClick={() => setEditing(null)}><Plus className="size-4" /> Nuevo lance</Button></DialogTrigger>
             <LanceFormDialog
+              key={editing?.id ?? "new"}
+              initial={editing}
               insumosCat={insumosCat}
               productosCat={productosCat}
               insumosSalidaRecent={insumosSalidaRecent}
-              onDone={() => { setOpenForm(false); qc.invalidateQueries({ queryKey: ["lances"] }); }}
+              onDone={() => { setOpenForm(false); setEditing(null); qc.invalidateQueries({ queryKey: ["lances"] }); }}
             />
           </Dialog>
+
         </div>
       </div>
 
