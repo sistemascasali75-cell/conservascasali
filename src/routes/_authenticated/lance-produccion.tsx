@@ -539,17 +539,28 @@ function LanceFormDialog({
         registrado_por: userRes.user?.id ?? null,
       };
 
-      const { data: lance, error } = await (supabase as any)
-        .from("lances_produccion").insert(payload).select("*").single();
-      if (error) throw error;
+      let lance: any;
+      if (isEdit && initial) {
+        const { data, error } = await (supabase as any)
+          .from("lances_produccion").update(payload).eq("id", initial.id).select("*").single();
+        if (error) throw error;
+        lance = data;
+        // reemplazar líneas de insumos (los movimientos previamente vinculados se conservan)
+        await (supabase as any).from("lance_insumos").delete().eq("lance_id", initial.id);
+      } else {
+        const { data, error } = await (supabase as any)
+          .from("lances_produccion").insert(payload).select("*").single();
+        if (error) throw error;
+        lance = data;
+      }
 
       const shouldRegisterMovs = opts.estado === "COMPLETO" && registrarMovs;
 
       // Insertar insumos + registrar movimientos SALIDA en insumos_movimientos si vinculados
       for (const row of insumos) {
         if (!row.nombre.trim() || row.cantidad <= 0) continue;
-        let movId: string | null = null;
-        if (shouldRegisterMovs && row.insumo_id) {
+        let movId: string | null = row.movimiento_insumo_id ?? null;
+        if (shouldRegisterMovs && row.insumo_id && !movId) {
           const { data: movData, error: movErr } = await (supabase as any).rpc("registrar_movimiento_insumo", {
             p_insumo_id: row.insumo_id,
             p_tipo: "PRODUCCION",
@@ -576,6 +587,7 @@ function LanceFormDialog({
         });
       }
       return opts.estado;
+
     },
     onSuccess: (estado) => {
       toast.success(estado === "BORRADOR" ? "Borrador guardado" : "Lance registrado");
