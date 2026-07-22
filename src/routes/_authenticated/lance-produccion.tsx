@@ -18,9 +18,10 @@ import { formatNumber } from "@/lib/format";
 import { exportPDF, exportXLSX } from "@/lib/export";
 import {
   Plus, Trash2, FileSpreadsheet, FileText, Factory, Eye, Search,
-  Package, AlertTriangle, TrendingDown, ClipboardList, Link2, History,
+  Package, AlertTriangle, TrendingDown, ClipboardList, Link2, History, Pencil,
 } from "lucide-react";
 import { useRoles } from "@/hooks/use-role";
+
 import { SearchSelect } from "@/components/ui/search-select";
 
 export const Route = createFileRoute("/_authenticated/lance-produccion")({
@@ -84,7 +85,9 @@ function LanceProduccionPage() {
   const { isAdmin } = useRoles();
   const qc = useQueryClient();
   const [openForm, setOpenForm] = useState(false);
+  const [editing, setEditing] = useState<Lance | null>(null);
   const [openDetail, setOpenDetail] = useState<Lance | null>(null);
+
   const today = new Date().toISOString().slice(0, 10);
   const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const [from, setFrom] = useState(monthAgo);
@@ -236,15 +239,18 @@ function LanceProduccionPage() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => exportLista("xlsx")}><FileSpreadsheet className="size-4" /> Excel</Button>
           <Button variant="outline" onClick={() => exportLista("pdf")}><FileText className="size-4" /> PDF</Button>
-          <Dialog open={openForm} onOpenChange={setOpenForm}>
-            <DialogTrigger asChild><Button><Plus className="size-4" /> Nuevo lance</Button></DialogTrigger>
+          <Dialog open={openForm} onOpenChange={(o) => { setOpenForm(o); if (!o) setEditing(null); }}>
+            <DialogTrigger asChild><Button onClick={() => setEditing(null)}><Plus className="size-4" /> Nuevo lance</Button></DialogTrigger>
             <LanceFormDialog
+              key={editing?.id ?? "new"}
+              initial={editing}
               insumosCat={insumosCat}
               productosCat={productosCat}
               insumosSalidaRecent={insumosSalidaRecent}
-              onDone={() => { setOpenForm(false); qc.invalidateQueries({ queryKey: ["lances"] }); }}
+              onDone={() => { setOpenForm(false); setEditing(null); qc.invalidateQueries({ queryKey: ["lances"] }); }}
             />
           </Dialog>
+
         </div>
       </div>
 
@@ -324,14 +330,16 @@ function LanceProduccionPage() {
                         <TableCell className="text-right text-rose-600">{formatNumber(mermaLatas, 0)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => setOpenDetail(l)}><Eye className="size-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => setOpenDetail(l)} title="Ver detalle"><Eye className="size-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => { setEditing(l); setOpenForm(true); }} title="Editar"><Pencil className="size-4" /></Button>
                             {isAdmin && (
                               <Button size="icon" variant="ghost" onClick={() => {
                                 if (confirm(`¿Eliminar lance #${l.numero}?`)) delMut.mutate(l.id);
-                              }}><Trash2 className="size-4 text-rose-600" /></Button>
+                              }} title="Eliminar"><Trash2 className="size-4 text-rose-600" /></Button>
                             )}
                           </div>
                         </TableCell>
+
                       </TableRow>
                     );
                   })}
@@ -422,42 +430,67 @@ function ResumenPorProducto({ lances }: { lances: Lance[] }) {
 /* ------------------------------------------------------------------------- */
 
 function LanceFormDialog({
-  insumosCat, productosCat, insumosSalidaRecent, onDone,
+  initial, insumosCat, productosCat, insumosSalidaRecent, onDone,
 }: {
+  initial?: Lance | null;
   insumosCat: InsumoCat[];
   productosCat: { id: string; descripcion: string; envase: string | null }[];
   insumosSalidaRecent: string[];
   onDone: () => void;
 }) {
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
-  const [usuarioCliente, setUsuarioCliente] = useState(CLIENTE_DEFAULT);
-  const [producto, setProducto] = useState("");
-  const [productoCustom, setProductoCustom] = useState(false);
-  const [envase, setEnvase] = useState("1/2 LB");
-  const [latasPorCaja, setLatasPorCaja] = useState(48);
-  const [envasado, setEnvasado] = useState("");
-  const [envasadoCustom, setEnvasadoCustom] = useState(false);
-  const [aceite, setAceite] = useState("");
-  const [agua, setAgua] = useState("");
-  const [carros, setCarros] = useState(0);
+  const isEdit = !!initial;
+  const [fecha, setFecha] = useState(initial?.fecha ?? new Date().toISOString().slice(0, 10));
+  const [usuarioCliente, setUsuarioCliente] = useState(initial?.usuario_cliente ?? CLIENTE_DEFAULT);
+  const [producto, setProducto] = useState(initial?.producto ?? "");
+  const [productoCustom, setProductoCustom] = useState(!!initial && !productosCat.some(p => p.descripcion === initial.producto));
+  const [envase, setEnvase] = useState(initial?.envase ?? "1/2 LB");
+  const [latasPorCaja, setLatasPorCaja] = useState(initial?.latas_por_caja ?? 48);
+  const [envasado, setEnvasado] = useState(initial?.envasado ?? "");
+  const [envasadoCustom, setEnvasadoCustom] = useState(!!initial?.envasado && !ENVASADO_GR_OPTS.includes(initial.envasado));
+  const [aceite, setAceite] = useState(initial?.aceite ?? "");
+  const [agua, setAgua] = useState(initial?.agua ?? "");
+  const [carros, setCarros] = useState(initial?.carros ?? 0);
 
-  const [envasadoCajas, setEnvasadoCajas] = useState(0);
-  const [envasadoLatasSueltas, setEnvasadoLatasSueltas] = useState(0);
-  const [prodCajas, setProdCajas] = useState(0);
-  const [prodLatas, setProdLatas] = useState(0);
-  const [realCajas, setRealCajas] = useState(0);
-  const [realLatas, setRealLatas] = useState(0);
+  const [envasadoCajas, setEnvasadoCajas] = useState(initial?.envasado_cajas ?? 0);
+  const [envasadoLatasSueltas, setEnvasadoLatasSueltas] = useState(initial?.envasado_latas ?? 0);
+  const [prodCajas, setProdCajas] = useState(initial?.lance_prod_cajas ?? 0);
+  const [prodLatas, setProdLatas] = useState(initial?.lance_prod_latas ?? 0);
+  const [realCajas, setRealCajas] = useState(initial?.lance_real_cajas ?? 0);
+  const [realLatas, setRealLatas] = useState(initial?.lance_real_latas ?? 0);
 
-  const [mPruebas, setMPruebas] = useState({ c: 0, l: 0 });
-  const [mMalas, setMMalas] = useState({ c: 0, l: 0 });
-  const [mMaquina, setMMaquina] = useState({ c: 0, l: 0 });
-  const [mMuestras, setMMuestras] = useState({ c: 0, l: 0 });
+  const [mPruebas, setMPruebas] = useState({ c: initial?.merma_pruebas_cajas ?? 0, l: initial?.merma_pruebas_latas ?? 0 });
+  const [mMalas, setMMalas] = useState({ c: initial?.merma_malas_cajas ?? 0, l: initial?.merma_malas_latas ?? 0 });
+  const [mMaquina, setMMaquina] = useState({ c: initial?.merma_maquina_cajas ?? 0, l: initial?.merma_maquina_latas ?? 0 });
+  const [mMuestras, setMMuestras] = useState({ c: initial?.merma_muestras_cajas ?? 0, l: initial?.merma_muestras_latas ?? 0 });
 
-  const [observaciones, setObservaciones] = useState("");
+  const [observaciones, setObservaciones] = useState(initial?.observaciones ?? "");
   const [insumos, setInsumos] = useState<LanceInsumoRow[]>(
     INSUMOS_TEMPLATE.map((t, i) => ({ ...t, orden: i })),
   );
-  const [registrarMovs, setRegistrarMovs] = useState(true);
+  const [insumosLoaded, setInsumosLoaded] = useState(!isEdit);
+  const [registrarMovs, setRegistrarMovs] = useState(!isEdit);
+
+  // Cargar insumos existentes al editar
+  const { data: existingInsumos } = useQuery({
+    queryKey: ["lance-insumos-edit", initial?.id],
+    enabled: isEdit,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("lance_insumos")
+        .select("*").eq("lance_id", initial!.id).order("orden");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+  if (isEdit && existingInsumos && !insumosLoaded) {
+    setInsumos(existingInsumos.map((r: any, i: number) => ({
+      id: r.id, orden: r.orden ?? i,
+      insumo_id: r.insumo_id, nombre: r.nombre ?? "",
+      presentacion: r.presentacion ?? "", cantidad: Number(r.cantidad) || 0,
+      observacion: r.observacion, movimiento_insumo_id: r.movimiento_insumo_id,
+    })));
+    setInsumosLoaded(true);
+  }
+
 
   const totalEnvasado = totalLatas(envasadoCajas, envasadoLatasSueltas, latasPorCaja);
   const totalProd = totalLatas(prodCajas, prodLatas, latasPorCaja);
@@ -506,17 +539,28 @@ function LanceFormDialog({
         registrado_por: userRes.user?.id ?? null,
       };
 
-      const { data: lance, error } = await (supabase as any)
-        .from("lances_produccion").insert(payload).select("*").single();
-      if (error) throw error;
+      let lance: any;
+      if (isEdit && initial) {
+        const { data, error } = await (supabase as any)
+          .from("lances_produccion").update(payload).eq("id", initial.id).select("*").single();
+        if (error) throw error;
+        lance = data;
+        // reemplazar líneas de insumos (los movimientos previamente vinculados se conservan)
+        await (supabase as any).from("lance_insumos").delete().eq("lance_id", initial.id);
+      } else {
+        const { data, error } = await (supabase as any)
+          .from("lances_produccion").insert(payload).select("*").single();
+        if (error) throw error;
+        lance = data;
+      }
 
       const shouldRegisterMovs = opts.estado === "COMPLETO" && registrarMovs;
 
       // Insertar insumos + registrar movimientos SALIDA en insumos_movimientos si vinculados
       for (const row of insumos) {
         if (!row.nombre.trim() || row.cantidad <= 0) continue;
-        let movId: string | null = null;
-        if (shouldRegisterMovs && row.insumo_id) {
+        let movId: string | null = row.movimiento_insumo_id ?? null;
+        if (shouldRegisterMovs && row.insumo_id && !movId) {
           const { data: movData, error: movErr } = await (supabase as any).rpc("registrar_movimiento_insumo", {
             p_insumo_id: row.insumo_id,
             p_tipo: "PRODUCCION",
@@ -543,9 +587,10 @@ function LanceFormDialog({
         });
       }
       return opts.estado;
+
     },
     onSuccess: (estado) => {
-      toast.success(estado === "BORRADOR" ? "Borrador guardado" : "Lance registrado");
+      toast.success(isEdit ? "Lance actualizado" : (estado === "BORRADOR" ? "Borrador guardado" : "Lance registrado"));
       qc.invalidateQueries();
       onDone();
     },
@@ -556,7 +601,7 @@ function LanceFormDialog({
   return (
     <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2"><Factory className="size-5" /> Nuevo Lance de Producción</DialogTitle>
+        <DialogTitle className="flex items-center gap-2"><Factory className="size-5" /> {isEdit ? `Editar Lance #${initial?.numero}` : "Nuevo Lance de Producción"}</DialogTitle>
       </DialogHeader>
 
       <div className="space-y-6">
@@ -741,11 +786,12 @@ function LanceFormDialog({
 
       <DialogFooter className="gap-2">
         <Button variant="outline" onClick={() => saveMut.mutate({ estado: "BORRADOR" })} disabled={saveMut.isPending}>
-          {saveMut.isPending ? "Guardando…" : "Guardar borrador"}
+          {saveMut.isPending ? "Guardando…" : (isEdit ? "Guardar cambios (borrador)" : "Guardar borrador")}
         </Button>
         <Button onClick={() => saveMut.mutate({ estado: "COMPLETO" })} disabled={saveMut.isPending}>
-          {saveMut.isPending ? "Guardando…" : "Registrar lance completo"}
+          {saveMut.isPending ? "Guardando…" : (isEdit ? "Guardar cambios" : "Registrar lance completo")}
         </Button>
+
       </DialogFooter>
 
     </DialogContent>
