@@ -636,7 +636,12 @@ function LanceFormDialog({
         <section className="space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Datos generales</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <Field label="Fecha"><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></Field>
+            <Field label="Fecha">
+              <div className="flex gap-1">
+                <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+                <Input type="time" value={horaRegistro} onChange={(e) => setHoraRegistro(e.target.value)} className="w-28" title="Hora de registro" />
+              </div>
+            </Field>
             <Field label="Cliente / Usuario"><Input value={usuarioCliente} onChange={(e) => setUsuarioCliente(e.target.value)} placeholder={CLIENTE_DEFAULT} /></Field>
             <Field label="Producto" className="md:col-span-2">
               {productoCustom ? (
