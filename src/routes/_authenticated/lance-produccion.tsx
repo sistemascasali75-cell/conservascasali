@@ -466,6 +466,13 @@ function LanceFormDialog({
   const [envasadoCustom, setEnvasadoCustom] = useState(!!initial?.envasado && !ENVASADO_GR_OPTS.includes(initial.envasado));
   const [aceite, setAceite] = useState(initial?.aceite ?? "");
   const [agua, setAgua] = useState(initial?.agua ?? "");
+  const [petroleo, setPetroleo] = useState<number | "">(initial?.petroleo ?? "");
+  const [petroleoUnidad, setPetroleoUnidad] = useState(initial?.petroleo_unidad ?? "GAL");
+  const [horaRegistro, setHoraRegistro] = useState<string>(
+    initial?.hora_registro
+      ? initial.hora_registro.slice(0, 5)
+      : new Date().toTimeString().slice(0, 5),
+  );
   const [carros, setCarros] = useState(initial?.carros ?? 0);
 
   const [envasadoCajas, setEnvasadoCajas] = useState(initial?.envasado_cajas ?? 0);
