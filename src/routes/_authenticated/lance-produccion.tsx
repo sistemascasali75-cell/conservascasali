@@ -1334,3 +1334,187 @@ function LanceDetailDialog({ lance, onClose }: { lance: Lance | null; onClose: (
 function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return <div className="rounded border p-2"><div className="text-[10px] text-muted-foreground uppercase">{label}</div><div className="text-sm font-medium">{value}</div></div>;
 }
+
+/* ------------------------------------------------------------------------- */
+/* INSUMOS USADOS TAB                                                         */
+/* ------------------------------------------------------------------------- */
+
+type LanceInsumoUsado = {
+  id: string;
+  lance_id: string;
+  insumo_id: string | null;
+  nombre: string;
+  presentacion: string | null;
+  cantidad: number;
+  movimiento_insumo_id: string | null;
+  observacion: string | null;
+};
+
+function InsumosUsadosTab({ lances }: { lances: Lance[] }) {
+  const lanceIds = useMemo(() => lances.map((l) => l.id), [lances]);
+  const lanceById = useMemo(() => new Map(lances.map((l) => [l.id, l])), [lances]);
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["insumos-usados", lanceIds.join(",")],
+    enabled: lanceIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("lance_insumos")
+        .select("id,lance_id,insumo_id,nombre,presentacion,cantidad,movimiento_insumo_id,observacion")
+        .in("lance_id", lanceIds);
+      if (error) throw error;
+      return (data ?? []) as LanceInsumoUsado[];
+    },
+  });
+
+  // Petróleo agregado desde lances (no es lance_insumo)
+  const petroleoRow = useMemo(() => {
+    const byUnit = new Map<string, number>();
+    let vinculados = 0;
+    const detalles: { lance: Lance; cantidad: number; unidad: string }[] = [];
+    lances.forEach((l) => {
+      const q = Number(l.petroleo ?? 0);
+      if (q > 0) {
+        const u = l.petroleo_unidad ?? "GAL";
+        byUnit.set(u, (byUnit.get(u) ?? 0) + q);
+        vinculados += 1;
+        detalles.push({ lance: l, cantidad: q, unidad: u });
+      }
+    });
+    if (byUnit.size === 0) return null;
+    return { byUnit, lancesCount: vinculados, detalles };
+  }, [lances]);
+
+  const grupos = useMemo(() => {
+    const m = new Map<string, {
+      nombre: string;
+      presentacion: string;
+      total: number;
+      lances: Set<string>;
+      vinculados: number;
+      detalles: LanceInsumoUsado[];
+    }>();
+    rows.forEach((r) => {
+      const key = r.nombre.trim().toLowerCase();
+      const cur = m.get(key) ?? {
+        nombre: r.nombre, presentacion: r.presentacion ?? "", total: 0,
+        lances: new Set<string>(), vinculados: 0, detalles: [] as LanceInsumoUsado[],
+      };
+      cur.total += Number(r.cantidad) || 0;
+      cur.lances.add(r.lance_id);
+      if (r.movimiento_insumo_id) cur.vinculados += 1;
+      if (!cur.presentacion && r.presentacion) cur.presentacion = r.presentacion;
+      cur.detalles.push(r);
+      m.set(key, cur);
+    });
+    return Array.from(m.values()).sort((a, b) => b.total - a.total);
+  }, [rows]);
+
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Package className="size-4" /> Insumos usados en {lances.length} lance(s)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {petroleoRow && (
+          <div className="rounded-lg border border-orange-200 bg-orange-50/60 dark:bg-orange-950/10 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-semibold text-orange-700 flex items-center gap-1.5">
+                <span>⛽</span> Petróleo — {petroleoRow.lancesCount} lance(s)
+              </div>
+              <div className="text-sm font-bold tabular-nums">
+                {Array.from(petroleoRow.byUnit.entries()).map(([u, q]) => `${formatNumber(q, 2)} ${u}`).join(" · ")}
+              </div>
+            </div>
+            <details className="text-xs">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Ver detalles</summary>
+              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-1">
+                {petroleoRow.detalles.map((d) => (
+                  <div key={d.lance.id} className="rounded border bg-background px-2 py-1 flex justify-between">
+                    <span className="font-mono text-[10px]">#{d.lance.numero} · {d.lance.fecha}</span>
+                    <span className="font-semibold tabular-nums">{formatNumber(d.cantidad, 2)} {d.unidad}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
+        )}
+
+        {isLoading && <div className="text-center py-6 text-muted-foreground">Cargando…</div>}
+        {!isLoading && grupos.length === 0 && !petroleoRow && (
+          <div className="text-center py-6 text-muted-foreground">Sin insumos consumidos en el período.</div>
+        )}
+
+        {grupos.length > 0 && (
+          <div className="overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Insumo</TableHead>
+                  <TableHead>Presentación</TableHead>
+                  <TableHead className="text-right">Lances</TableHead>
+                  <TableHead className="text-right">Vinculados</TableHead>
+                  <TableHead className="text-right">Total consumido</TableHead>
+                  <TableHead className="w-8"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {grupos.map((g) => {
+                  const isOpen = expanded === g.nombre;
+                  return (
+                    <>
+                      <TableRow key={g.nombre} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpanded(isOpen ? null : g.nombre)}>
+                        <TableCell className="font-medium">{g.nombre}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{g.presentacion || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{g.lances.size}</TableCell>
+                        <TableCell className="text-right">
+                          {g.vinculados > 0
+                            ? <Badge variant="outline" className="text-emerald-700"><Link2 className="size-3" /> {g.vinculados}</Badge>
+                            : <span className="text-xs text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-bold">{formatNumber(g.total, 2)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{isOpen ? "▾" : "▸"}</TableCell>
+                      </TableRow>
+                      {isOpen && (
+                        <TableRow key={`${g.nombre}-detail`}>
+                          <TableCell colSpan={6} className="bg-muted/30 p-0">
+                            <div className="p-3 space-y-1">
+                              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Detalle de movimientos</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                                {g.detalles.sort((a, b) => {
+                                  const la = lanceById.get(a.lance_id); const lb = lanceById.get(b.lance_id);
+                                  return (lb?.fecha ?? "").localeCompare(la?.fecha ?? "");
+                                }).map((d) => {
+                                  const l = lanceById.get(d.lance_id);
+                                  return (
+                                    <div key={d.id} className="rounded border bg-background px-2 py-1.5 flex items-center justify-between gap-2 text-xs">
+                                      <div className="flex items-center gap-1.5 min-w-0">
+                                        <span className="font-mono text-[10px]">#{l?.numero}</span>
+                                        <span className="text-muted-foreground">{l?.fecha}</span>
+                                        <span className="truncate">{l?.producto}</span>
+                                        {d.movimiento_insumo_id && <Badge variant="outline" className="text-emerald-700 text-[9px]"><Link2 className="size-2.5" /></Badge>}
+                                      </div>
+                                      <span className="font-semibold tabular-nums whitespace-nowrap">{formatNumber(Number(d.cantidad), 2)}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
