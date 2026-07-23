@@ -289,6 +289,7 @@ function LanceProduccionPage() {
         <TabsList>
           <TabsTrigger value="lista">Lista de lances</TabsTrigger>
           <TabsTrigger value="resumen">Resumen por producto</TabsTrigger>
+          <TabsTrigger value="insumos-usados">Insumos usados</TabsTrigger>
         </TabsList>
 
         <TabsContent value="lista">
@@ -299,7 +300,7 @@ function LanceProduccionPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>N°</TableHead>
-                    <TableHead>Fecha</TableHead>
+                    <TableHead>Fecha · hora</TableHead>
                     <TableHead>Producto</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Envase</TableHead>
@@ -323,7 +324,10 @@ function LanceProduccionPage() {
                     return (
                       <TableRow key={l.id}>
                         <TableCell className="font-mono">#{l.numero}</TableCell>
-                        <TableCell>{l.fecha}</TableCell>
+                        <TableCell>
+                          <div>{l.fecha}</div>
+                          {l.hora_registro && <div className="text-[10px] text-muted-foreground font-mono">🕒 {fmtHora(l.hora_registro)}</div>}
+                        </TableCell>
                         <TableCell className="font-medium">{l.producto}</TableCell>
                         <TableCell className="text-xs">{l.usuario_cliente}</TableCell>
                         <TableCell><Badge variant="outline">{l.envase}</Badge></TableCell>
@@ -360,7 +364,12 @@ function LanceProduccionPage() {
         <TabsContent value="resumen">
           <ResumenPorProducto lances={filtered} />
         </TabsContent>
+
+        <TabsContent value="insumos-usados">
+          <InsumosUsadosTab lances={filtered} />
+        </TabsContent>
       </Tabs>
+
 
       <LanceDetailDialog lance={openDetail} onClose={() => setOpenDetail(null)} />
     </div>
