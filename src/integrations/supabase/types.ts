@@ -519,6 +519,7 @@ export type Database = {
           envase: string
           estado: string
           fecha: string
+          hora_registro: string | null
           id: string
           lance_prod_cajas: number
           lance_prod_latas: number
@@ -537,6 +538,8 @@ export type Database = {
           observaciones: string | null
           packing: number
           parametros_extra: Json
+          petroleo: number | null
+          petroleo_unidad: string | null
           producto: string
           registrado_por: string | null
           updated_at: string
@@ -553,6 +556,7 @@ export type Database = {
           envase?: string
           estado?: string
           fecha?: string
+          hora_registro?: string | null
           id?: string
           lance_prod_cajas?: number
           lance_prod_latas?: number
@@ -571,6 +575,8 @@ export type Database = {
           observaciones?: string | null
           packing?: number
           parametros_extra?: Json
+          petroleo?: number | null
+          petroleo_unidad?: string | null
           producto?: string
           registrado_por?: string | null
           updated_at?: string
@@ -587,6 +593,7 @@ export type Database = {
           envase?: string
           estado?: string
           fecha?: string
+          hora_registro?: string | null
           id?: string
           lance_prod_cajas?: number
           lance_prod_latas?: number
@@ -605,6 +612,8 @@ export type Database = {
           observaciones?: string | null
           packing?: number
           parametros_extra?: Json
+          petroleo?: number | null
+          petroleo_unidad?: string | null
           producto?: string
           registrado_por?: string | null
           updated_at?: string
