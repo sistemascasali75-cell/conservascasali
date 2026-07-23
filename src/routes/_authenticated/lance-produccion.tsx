@@ -767,7 +767,41 @@ function LanceFormDialog({
               <Button size="sm" variant="outline" onClick={addIns}><Plus className="size-4" /> Añadir</Button>
             </div>
           </div>
+          {/* Petróleo (columna dedicada en tabla, se muestra como insumo destacado) */}
+          <div className="rounded-lg border p-3 bg-orange-50/60 dark:bg-orange-950/10 border-orange-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold text-orange-700 flex items-center gap-1.5">
+                <span className="text-base">⛽</span> Petróleo consumido
+              </div>
+              <span className="text-[10px] text-muted-foreground">Se guarda en el lance (no genera movimiento de insumo)</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div>
+                <Label className="text-[10px]">Cantidad</Label>
+                <Input type="number" step="any" min="0" value={petroleo}
+                  onChange={(e) => setPetroleo(e.target.value === "" ? "" : Math.max(0, +e.target.value))}
+                  placeholder="0" className="text-right tabular-nums h-10 font-semibold" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Unidad</Label>
+                <Select value={petroleoUnidad} onValueChange={setPetroleoUnidad}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GAL">Galones (GAL)</SelectItem>
+                    <SelectItem value="LTS">Litros (LTS)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end text-xs text-muted-foreground">
+                {petroleo !== "" && Number(petroleo) > 0 && totalReal > 0 && (
+                  <span>≈ {formatNumber(Number(petroleo) / (totalReal / 1000), 3)} {petroleoUnidad} / mil latas</span>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
+
             {insumos.map((r, i) => (
               <InsumoRow
                 key={i}
