@@ -30,9 +30,11 @@ export const Route = createFileRoute("/_authenticated/lance-produccion")({
 
 type Lance = {
   id: string; numero: number; fecha: string;
+  hora_registro?: string | null;
   usuario_cliente: string; producto: string; envase: string; latas_por_caja: number;
   packing?: number | null; estado?: string | null;
   envasado: string | null; aceite: string | null; agua: string | null;
+  petroleo?: number | null; petroleo_unidad?: string | null;
   parametros_extra: { nombre: string; valor: string; unidad?: string }[];
   carros: number;
   envasado_cajas: number; envasado_latas: number;
@@ -44,6 +46,12 @@ type Lance = {
   merma_muestras_cajas: number; merma_muestras_latas: number;
   observaciones: string | null;
   created_at: string;
+};
+
+const fmtHora = (h?: string | null) => {
+  if (!h) return "";
+  const [hh, mm] = h.split(":");
+  return hh && mm ? `${hh}:${mm}` : h;
 };
 
 
