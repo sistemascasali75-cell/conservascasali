@@ -1259,7 +1259,7 @@ function LanceDetailDialog({ lance, onClose }: { lance: Lance | null; onClose: (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Lance #{lance.numero} · {lance.fecha}</DialogTitle>
+          <DialogTitle>Lance #{lance.numero} · {lance.fecha}{lance.hora_registro ? ` · ${fmtHora(lance.hora_registro)}` : ""}</DialogTitle>
           <div className="text-sm text-muted-foreground">{lance.producto} · {lance.usuario_cliente}</div>
         </DialogHeader>
 
@@ -1271,6 +1271,8 @@ function LanceDetailDialog({ lance, onClose }: { lance: Lance | null; onClose: (
             <Info label="Envasado" value={lance.envasado ?? "—"} />
             <Info label="Aceite" value={lance.aceite ?? "—"} />
             <Info label="Agua" value={lance.agua ?? "—"} />
+            <Info label="Petróleo" value={lance.petroleo ? `${formatNumber(Number(lance.petroleo), 2)} ${lance.petroleo_unidad ?? ""}` : "—"} />
+            <Info label="Hora reg." value={lance.hora_registro ? fmtHora(lance.hora_registro) : "—"} />
           </div>
 
           <div className="rounded-lg border">
