@@ -546,10 +546,13 @@ function LanceFormDialog({
       const { data: userRes } = await supabase.auth.getUser();
 
       const payload = {
-        fecha, usuario_cliente: usuarioCliente, producto, envase, latas_por_caja: latasPorCaja,
+        fecha, hora_registro: horaRegistro || null,
+        usuario_cliente: usuarioCliente, producto, envase, latas_por_caja: latasPorCaja,
         packing: latasPorCaja,
         estado: opts.estado,
         envasado: envasado || null, aceite: aceite || null, agua: agua || null,
+        petroleo: petroleo === "" ? null : Number(petroleo),
+        petroleo_unidad: petroleo === "" ? null : petroleoUnidad,
         parametros_extra: [],
         carros,
         envasado_cajas: envasadoCajas, envasado_latas: envasadoLatasSueltas,
