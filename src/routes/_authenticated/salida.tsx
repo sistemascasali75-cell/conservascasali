@@ -278,6 +278,21 @@ function SalidaPage() {
             <LoteSnapshotPanel lote={loteSel as any} warrantsActivos={warrantsActivos} />
           )}
 
+          {loteSel && (
+            <Section title="Estado del lote">
+              <Field label="Estado del lote" hint="Editable · se actualiza el lote y se registra en el movimiento" full>
+                <Select value={estadoLote} onValueChange={setEstadoLote}>
+                  <SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar estado" /></SelectTrigger>
+                  <SelectContent>
+                    {(cat?.estados ?? []).map((s: any) => (
+                      <SelectItem key={s.nombre} value={s.nombre}>{s.nombre.replace(/_/g, " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </Section>
+          )}
+
           <Section title="2 · Ubicación y cantidad">
             <Field label="Ubicación origen *" full>
               <SearchSelect
