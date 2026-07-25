@@ -59,7 +59,7 @@ function SalidaPage() {
   const { data: cat } = useQuery({
     queryKey: ["catalogos-salida"],
     queryFn: async () => {
-      const [p, l, s, u, a, c, w] = await Promise.all([
+      const [p, l, s, u, a, c, w, e] = await Promise.all([
         supabase.from("productos").select("*").eq("activo", true).order("codigo_base"),
         supabase.from("lotes").select("*").order("fecha_vencimiento"),
         supabase.from("stock_lote_ubicacion").select("*"),
@@ -67,11 +67,13 @@ function SalidaPage() {
         supabase.from("almacenes").select("*"),
         supabase.from("clientes_proveedores").select("*").in("tipo", ["CLIENTE", "AMBOS"]),
         supabase.from("warrants").select("lote_id, cantidad_cajas_warrant").eq("estado", "ACTIVO"),
+        supabase.from("estados" as any).select("nombre, orden").order("orden"),
       ]);
       return {
         productos: p.data ?? [], lotes: l.data ?? [], stock: s.data ?? [],
         ubicaciones: u.data ?? [], almacenes: a.data ?? [], clientes: c.data ?? [],
         warrants: w.data ?? [],
+        estados: ((e.data ?? []) as unknown) as Array<{ nombre: string; orden: number }>,
       };
     },
   });
