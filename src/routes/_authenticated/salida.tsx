@@ -110,6 +110,7 @@ function SalidaPage() {
 
   useEffect(() => { if (nroWarrant.trim()) setTieneWarrant(true); }, [nroWarrant]);
   useEffect(() => { setTieneWarrant(warrantsActivos > 0); }, [warrantsActivos]);
+  useEffect(() => { setEstadoLote((loteSel?.estado as string) ?? ""); }, [loteSel]);
 
   const productoSel = useMemo(() => (cat?.productos ?? []).find((p: any) => p.id === productoId) as any, [cat, productoId]);
   const envaseSel: string = productoSel?.envase ?? "";
