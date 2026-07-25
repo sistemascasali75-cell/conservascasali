@@ -1111,16 +1111,17 @@ function InsumoRow({
   onRemove: () => void;
 }) {
   const options = useMemo(() => {
-    // Preservar el orden de últimos SALIDA (más reciente primero)
-    const filtered = insumosSalidaRecent.length > 0
-      ? (insumosSalidaRecent
-          .map((id) => insumosCat.find((c) => c.id === id))
-          .filter(Boolean) as InsumoCat[])
-      : insumosCat;
-    return filtered.map((c) => ({
+    // Mostrar TODO el catálogo, priorizando los últimos con SALIDA reciente
+    const recentSet = new Set(insumosSalidaRecent);
+    const recentOrdered = insumosSalidaRecent
+      .map((id) => insumosCat.find((c) => c.id === id))
+      .filter(Boolean) as InsumoCat[];
+    const rest = insumosCat.filter((c) => !recentSet.has(c.id));
+    const ordered = [...recentOrdered, ...rest];
+    return ordered.map((c) => ({
       value: c.id,
       label: `${c.codigo} · ${c.insumo}`,
-      description: c.formato ?? undefined,
+      description: [c.formato, recentSet.has(c.id) ? "· reciente" : null].filter(Boolean).join(" ") || undefined,
       searchText: `${c.codigo} ${c.insumo} ${c.formato ?? ""}`,
     }));
   }, [insumosCat, insumosSalidaRecent]);
