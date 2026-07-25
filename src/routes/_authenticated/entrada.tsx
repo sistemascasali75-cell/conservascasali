@@ -222,6 +222,7 @@ function EntradaPage() {
           p_tercero: tercero || undefined,
           p_empaque: empaqueVal,
           p_tamano: tamano || undefined,
+          p_estado_lote: estado || undefined,
         } as any);
         if (movErr) throw movErr;
         toast.success("Entrada registrada");

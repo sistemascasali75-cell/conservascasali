@@ -49,6 +49,7 @@ function SalidaPage() {
   const [autorizado, setAutorizado] = useState<string>("");
   const [autorizadoOtro, setAutorizadoOtro] = useState<string>("");
   const [tamano, setTamano] = useState("");
+  const [estadoLote, setEstadoLote] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const limaToday = () => new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" })).toISOString().slice(0, 10);
   const [fecha, setFecha] = useState<string>(limaToday());
@@ -58,7 +59,7 @@ function SalidaPage() {
   const { data: cat } = useQuery({
     queryKey: ["catalogos-salida"],
     queryFn: async () => {
-      const [p, l, s, u, a, c, w] = await Promise.all([
+      const [p, l, s, u, a, c, w, e] = await Promise.all([
         supabase.from("productos").select("*").eq("activo", true).order("codigo_base"),
         supabase.from("lotes").select("*").order("fecha_vencimiento"),
         supabase.from("stock_lote_ubicacion").select("*"),
@@ -66,11 +67,13 @@ function SalidaPage() {
         supabase.from("almacenes").select("*"),
         supabase.from("clientes_proveedores").select("*").in("tipo", ["CLIENTE", "AMBOS"]),
         supabase.from("warrants").select("lote_id, cantidad_cajas_warrant").eq("estado", "ACTIVO"),
+        supabase.from("estados" as any).select("nombre, orden").order("orden"),
       ]);
       return {
         productos: p.data ?? [], lotes: l.data ?? [], stock: s.data ?? [],
         ubicaciones: u.data ?? [], almacenes: a.data ?? [], clientes: c.data ?? [],
         warrants: w.data ?? [],
+        estados: ((e.data ?? []) as unknown) as Array<{ nombre: string; orden: number }>,
       };
     },
   });
@@ -107,6 +110,7 @@ function SalidaPage() {
 
   useEffect(() => { if (nroWarrant.trim()) setTieneWarrant(true); }, [nroWarrant]);
   useEffect(() => { setTieneWarrant(warrantsActivos > 0); }, [warrantsActivos]);
+  useEffect(() => { setEstadoLote((loteSel?.estado as string) ?? ""); }, [loteSel]);
 
   const productoSel = useMemo(() => (cat?.productos ?? []).find((p: any) => p.id === productoId) as any, [cat, productoId]);
   const envaseSel: string = productoSel?.envase ?? "";
@@ -215,6 +219,7 @@ function SalidaPage() {
         p_donacion: donacion,
         p_autorizado: autorizadoFinal || undefined,
         p_tamano: tamano || undefined,
+        p_estado_lote: estadoLote || undefined,
       } as any);
       if (error) throw error;
       toast.success("Salida registrada");
@@ -271,6 +276,21 @@ function SalidaPage() {
 
           {loteSel && (
             <LoteSnapshotPanel lote={loteSel as any} warrantsActivos={warrantsActivos} />
+          )}
+
+          {loteSel && (
+            <Section title="Estado del lote">
+              <Field label="Estado del lote" hint="Editable · se actualiza el lote y se registra en el movimiento" full>
+                <Select value={estadoLote} onValueChange={setEstadoLote}>
+                  <SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar estado" /></SelectTrigger>
+                  <SelectContent>
+                    {(cat?.estados ?? []).map((s: any) => (
+                      <SelectItem key={s.nombre} value={s.nombre}>{s.nombre.replace(/_/g, " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </Section>
           )}
 
           <Section title="2 · Ubicación y cantidad">
