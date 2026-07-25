@@ -49,6 +49,7 @@ function SalidaPage() {
   const [autorizado, setAutorizado] = useState<string>("");
   const [autorizadoOtro, setAutorizadoOtro] = useState<string>("");
   const [tamano, setTamano] = useState("");
+  const [estadoLote, setEstadoLote] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const limaToday = () => new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" })).toISOString().slice(0, 10);
   const [fecha, setFecha] = useState<string>(limaToday());
