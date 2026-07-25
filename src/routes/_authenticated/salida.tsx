@@ -219,6 +219,7 @@ function SalidaPage() {
         p_donacion: donacion,
         p_autorizado: autorizadoFinal || undefined,
         p_tamano: tamano || undefined,
+        p_estado_lote: estadoLote || undefined,
       } as any);
       if (error) throw error;
       toast.success("Salida registrada");
