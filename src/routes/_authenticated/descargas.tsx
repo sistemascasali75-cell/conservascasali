@@ -210,6 +210,85 @@ async function fetchAllRows(key: string, select = "*", order?: string): Promise<
 function DescargasPage() {
   const [filtro, setFiltro] = useState("");
   const [descargandoTodo, setDescargandoTodo] = useState(false);
+  const [descargandoVinc, setDescargandoVinc] = useState(false);
+
+  const descargarVinculadasXLSX = async () => {
+    setDescargandoVinc(true);
+    const tid = toast.loading("Generando Excel de tablas vinculadas...");
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "Casali";
+      wb.created = new Date();
+
+      const resumen = wb.addWorksheet("Resumen");
+      const t1 = resumen.addRow(["TABLAS VINCULADAS (vistas del sistema)"]);
+      t1.font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
+      resumen.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A5F" } };
+      resumen.mergeCells("A1:C1");
+      resumen.addRow([`Exportado ${new Date().toLocaleString("es-PE")}`]);
+      resumen.addRow([]);
+      const hdr = resumen.addRow(["Vista", "Tabla base", "Filas"]);
+      hdr.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      hdr.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A5F" } };
+
+      let total = 0;
+      let errores = 0;
+      for (const v of VISTAS) {
+        toast.loading(`Vinculando ${v.nombre}...`, { id: tid });
+        try {
+          const raw = await fetchAllRows(v.table, v.select, v.order);
+          const rows = buildVistaRows(raw, v.expand);
+          resumen.addRow([v.nombre, v.table, rows.length]);
+          total += rows.length;
+          const ws = wb.addWorksheet(v.nombre.slice(0, 31));
+          if (!rows.length) {
+            ws.addRow(["(sin registros)"]);
+            continue;
+          }
+          const headers = Array.from(new Set(rows.flatMap((r) => Object.keys(r))));
+          const h = ws.addRow(headers);
+          h.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          h.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A5F" } };
+          ws.views = [{ state: "frozen", ySplit: 1 }];
+          for (const r of rows) ws.addRow(headers.map((k) => (r[k] ?? "")));
+          ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
+          ws.columns.forEach((c) => {
+            let max = 12;
+            c.eachCell?.({ includeEmpty: false }, (cell) => {
+              const l = cell.value ? String(cell.value).length : 0;
+              if (l > max) max = l;
+            });
+            c.width = Math.min(max + 2, 45);
+          });
+        } catch (e: any) {
+          errores++;
+          resumen.addRow([v.nombre, v.table, `ERROR: ${e?.message || e}`]);
+        }
+      }
+      const tot = resumen.addRow(["", "TOTAL", total]);
+      tot.font = { bold: true };
+      resumen.columns.forEach((c) => (c.width = 34));
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tablas-vinculadas-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(
+        `Vinculadas: ${total.toLocaleString("es-PE")} filas${errores ? ` · ${errores} vista(s) con error` : ""}`,
+        { id: tid },
+      );
+    } catch (e: any) {
+      toast.error(`Error: ${e?.message || e}`, { id: tid });
+    } finally {
+      setDescargandoVinc(false);
+    }
+  };
+
 
   const descargarTodoXLSX = async () => {
     setDescargandoTodo(true);
