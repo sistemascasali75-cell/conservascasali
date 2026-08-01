@@ -449,6 +449,11 @@ function DescargasPage() {
             {descargandoTodo ? <Loader2 className="size-5 animate-spin" /> : <FileSpreadsheet className="size-5" />}
             Descargar TODA la base de datos (Excel)
           </Button>
+          <Button size="lg" variant="secondary" onClick={descargarVinculadasXLSX} disabled={descargandoVinc} className="gap-2">
+            {descargandoVinc ? <Loader2 className="size-5 animate-spin" /> : <Link2 className="size-5" />}
+            Descargar TABLAS VINCULADAS ({VISTAS.length} vistas)
+          </Button>
+
           <div className="text-right">
             <div className="text-xs text-muted-foreground">Total registros en el sistema</div>
             <div className="text-3xl font-bold text-primary tabular-nums">
