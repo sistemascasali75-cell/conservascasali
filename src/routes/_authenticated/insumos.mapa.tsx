@@ -12,6 +12,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 import { Boxes, Search } from "lucide-react";
 import { formatNumber } from "@/lib/format";
+import { fetchAllRows } from "@/lib/fetch-all";
+
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/insumos/mapa")({
