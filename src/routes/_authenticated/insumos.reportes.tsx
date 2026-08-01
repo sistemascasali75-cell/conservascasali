@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatNumber } from "@/lib/format";
+import { fetchAllRows } from "@/lib/fetch-all";
+
 import { exportPDF, exportXLSX } from "@/lib/export";
 import { FileSpreadsheet, FileText, BarChart3, TrendingDown, TrendingUp, AlertTriangle, Database } from "lucide-react";
 
