@@ -12,6 +12,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 import { Boxes, Search } from "lucide-react";
 import { formatNumber } from "@/lib/format";
+import { fetchAllRows } from "@/lib/fetch-all";
+
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/insumos/mapa")({
@@ -555,22 +557,22 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "su
 function GrupoMovimientos({ categoria, subcategoria, grupo }: { categoria: string; subcategoria: string; grupo: string }) {
   const { data: movs = [], isLoading } = useQuery({
     queryKey: ["insumos-mapa-grupo-movs", categoria, subcategoria, grupo],
-    queryFn: async () => {
-      let query = (supabase as any)
-        .from("vista_insumos_movimientos")
-        .select("*")
-        .eq("categoria", categoria)
-        .eq("subcategoria", subcategoria)
-        .order("fecha", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(500);
-      query = grupo === "GENERAL"
-        ? query.or("grupo.is.null,grupo.eq.GENERAL")
-        : query.eq("grupo", grupo);
-      const { data, error } = await query;
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () =>
+      fetchAllRows((f, t) => {
+        let query = (supabase as any)
+          .from("vista_insumos_movimientos")
+          .select("*")
+          .eq("categoria", categoria)
+          .eq("subcategoria", subcategoria)
+          .order("fecha", { ascending: false })
+          .order("created_at", { ascending: false })
+          .range(f, t);
+        query = grupo === "GENERAL"
+          ? query.or("grupo.is.null,grupo.eq.GENERAL")
+          : query.eq("grupo", grupo);
+        return query;
+      }),
+
   });
 
   const totals = useMemo(() => {

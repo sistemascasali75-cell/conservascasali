@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatNumber } from "@/lib/format";
+import { fetchAllRows } from "@/lib/fetch-all";
+
 import { exportPDF, exportXLSX } from "@/lib/export";
 import { FileSpreadsheet, FileText, BarChart3, TrendingDown, TrendingUp, AlertTriangle, Database } from "lucide-react";
 
@@ -42,17 +44,18 @@ function ReportesInsumos() {
 
   const { data: movs = [] } = useQuery({
     queryKey: ["insumos-reportes-movs", from, to],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("vista_insumos_movimientos")
-        .select("*")
-        .gte("fecha", from)
-        .lte("fecha", to)
-        .order("fecha", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as MovRow[];
-    },
+    queryFn: async () =>
+      fetchAllRows<MovRow>((f, t) =>
+        (supabase as any)
+          .from("vista_insumos_movimientos")
+          .select("*")
+          .gte("fecha", from)
+          .lte("fecha", to)
+          .order("fecha", { ascending: false })
+          .range(f, t),
+      ),
   });
+
 
   // Resumen por categoría > grupo > subcategoría
   const porCategoria = useMemo(() => {
