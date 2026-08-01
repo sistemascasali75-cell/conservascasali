@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { exportPDF, exportXLSX } from "@/lib/export";
-import { FileSpreadsheet, FileText, Download, Database, Search, Loader2 } from "lucide-react";
+import { FileSpreadsheet, FileText, Download, Database, Search, Loader2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/descargas")({
