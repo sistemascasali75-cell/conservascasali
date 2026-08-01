@@ -522,21 +522,21 @@ function DetalleMovimientosDialog({
   const { data: movs = [], isLoading } = useQuery({
     queryKey: ["insumo-detalle-mov", stock?.grupo, stock?.subcategoria, stock?.categoria],
     enabled: open,
-    queryFn: async () => {
-      let q = (supabase as any)
-        .from("vista_insumos_movimientos")
-        .select("id,fecha,tipo_mov,clase,cantidad,saldo_post,nro_guia,vale_num,proveedor,observacion,categoria,grupo,subcategoria")
-        .eq("categoria", stock!.categoria)
-        .eq("subcategoria", stock!.subcategoria)
-        .order("fecha", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (stock!.grupo) q = q.eq("grupo", stock!.grupo);
-      else q = q.is("grupo", null);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () =>
+      fetchAllRows((f, t) => {
+        let q = (supabase as any)
+          .from("vista_insumos_movimientos")
+          .select("id,fecha,tipo_mov,clase,cantidad,saldo_post,nro_guia,vale_num,proveedor,observacion,categoria,grupo,subcategoria")
+          .eq("categoria", stock!.categoria)
+          .eq("subcategoria", stock!.subcategoria)
+          .order("fecha", { ascending: false })
+          .order("created_at", { ascending: false })
+          .range(f, t);
+        if (stock!.grupo) q = q.eq("grupo", stock!.grupo);
+        else q = q.is("grupo", null);
+        return q;
+      }),
+
   });
 
   const totals = useMemo(() => {
