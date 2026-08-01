@@ -28,6 +28,9 @@ export function useRoles() {
     isSupervisor: roles.includes("OPERADOR"),
     isAlmacenero: roles.includes("VISITA"),
     canManageCatalogs: roles.includes("ADMIN") || roles.includes("OPERADOR"),
+    // Control total del módulo Insumos (catálogo, movimientos, lances, vales)
+    canManageInsumos:
+      roles.includes("ADMIN") || roles.includes("OPERADOR") || roles.includes("INSUMOS"),
     canApprove: roles.includes("ADMIN") || roles.includes("OPERADOR"),
     has: (r: AppRole) => roles.includes(r),
     hasAny: (rs: AppRole[]) => rs.some((r) => roles.includes(r)),

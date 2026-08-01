@@ -50,7 +50,7 @@ function genCodigo(cat: string, sub: string) {
 
 function CatalogoInsumos() {
   const qc = useQueryClient();
-  const { canManageCatalogs, isAdmin } = useRoles();
+  const { canManageInsumos } = useRoles();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Insumo>(EMPTY);
   const [q, setQ] = useState("");
@@ -126,7 +126,7 @@ function CatalogoInsumos() {
           <h1 className="text-2xl font-bold">Catálogo de insumos</h1>
           <p className="text-sm text-muted-foreground">{items.length} insumos · {categorias.length} categorías</p>
         </div>
-        {canManageCatalogs && (
+        {canManageInsumos && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button onClick={openNew}><Plus className="size-4" /> Nuevo insumo</Button></DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -248,7 +248,7 @@ function CatalogoInsumos() {
                 <TableHead className="text-right">Und/emp</TableHead>
                 <TableHead className="text-right">Stock mín</TableHead>
                 <TableHead>Unidad</TableHead>
-                {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
+                {canManageInsumos && <TableHead className="text-right">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -263,7 +263,7 @@ function CatalogoInsumos() {
                   <TableCell className="text-right">{i.und_x_empaque}</TableCell>
                   <TableCell className="text-right">{i.stock_min_und}</TableCell>
                   <TableCell className="text-xs">{i.unidad}</TableCell>
-                  {isAdmin && (
+                  {canManageInsumos && (
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button size="sm" variant="ghost" onClick={() => openEdit(i)} title="Editar">

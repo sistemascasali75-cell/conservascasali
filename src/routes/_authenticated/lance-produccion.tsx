@@ -90,7 +90,7 @@ const INSUMOS_TEMPLATE: Omit<LanceInsumoRow, "orden">[] = [
 const totalLatas = (cajas: number, latas: number, lpc = 48) => cajas * lpc + latas;
 
 function LanceProduccionPage() {
-  const { isAdmin } = useRoles();
+  const { canManageInsumos: isAdmin } = useRoles();
   const qc = useQueryClient();
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Lance | null>(null);
