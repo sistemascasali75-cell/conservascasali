@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatNumber } from "@/lib/format";
+import { fetchAllRows } from "@/lib/fetch-all";
+
 import { exportPDF, exportXLSX } from "@/lib/export";
 import { Plus, Loader2, FileSpreadsheet, FileText, Search } from "lucide-react";
 
