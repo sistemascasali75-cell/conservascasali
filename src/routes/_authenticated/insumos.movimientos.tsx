@@ -60,12 +60,17 @@ function MovimientosInsumos() {
 
   const { data: movs = [] } = useQuery({
     queryKey: ["insumos-movs-full"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any).from("vista_insumos_movimientos").select("*").order("fecha", { ascending: false }).order("created_at", { ascending: false }).limit(500);
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () =>
+      fetchAllRows((from, to) =>
+        (supabase as any)
+          .from("vista_insumos_movimientos")
+          .select("*")
+          .order("fecha", { ascending: false })
+          .order("created_at", { ascending: false })
+          .range(from, to),
+      ),
   });
+
 
   const tipoSel = useMemo(() => TIPOS.find((t) => t.v === tipo)!, [tipo]);
   const categorias = useMemo(() => Array.from(new Set((insumos as any[]).map((i) => i.categoria))).sort(), [insumos]);
