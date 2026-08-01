@@ -45,11 +45,14 @@ const READ_RPCS = new Set<string>([
   "is_supervisor_or_admin",
 ]);
 
-// Whitelist de escritura para INSUMOS (tablas y RPC del módulo)
+// Whitelist de escritura para INSUMOS (control total del módulo Insumos)
 const INSUMOS_WRITE_TABLES = new Set<string>([
   "insumos",
   "insumos_movimientos",
   "vista_insumos_movimientos",
+  "lances_produccion",
+  "lance_insumos",
+  "vales",
 ]);
 const INSUMOS_WRITE_RPCS = new Set<string>([
   "registrar_movimiento_insumo",
