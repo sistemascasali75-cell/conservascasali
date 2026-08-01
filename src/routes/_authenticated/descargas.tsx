@@ -39,18 +39,165 @@ const TABLAS: Tabla[] = [
   { key: "insumos", nombre: "Insumos · Catálogo", descripcion: "Maestro de insumos", grupo: "Insumos" },
   { key: "insumos_movimientos", nombre: "Insumos · Movimientos", descripcion: "Todos los movimientos de insumos", grupo: "Insumos" },
 
+  { key: "lances_produccion", nombre: "Lances de producción", descripcion: "Cabeceras de lances", grupo: "Insumos" },
+  { key: "lance_insumos", nombre: "Lances · Insumos usados", descripcion: "Detalle de insumos por lance", grupo: "Insumos" },
+
   { key: "ordenes_etiquetado", nombre: "Órdenes de etiquetado", descripcion: "Cabeceras de etiquetado", grupo: "Operaciones" },
   { key: "warrants", nombre: "Warrants", descripcion: "Documentos de garantía", grupo: "Operaciones" },
+  { key: "vales", nombre: "Vales", descripcion: "Vales de salida registrados", grupo: "Operaciones" },
+
+  { key: "ventas_cotizaciones", nombre: "Ventas · Cotizaciones", descripcion: "Cabeceras de cotizaciones", grupo: "Ventas" },
+  { key: "ventas_cot_items", nombre: "Ventas · Ítems cotización", descripcion: "Líneas de cotizaciones", grupo: "Ventas" },
+  { key: "ventas_ordenes", nombre: "Ventas · Órdenes", descripcion: "Órdenes de venta", grupo: "Ventas" },
+  { key: "ventas_orden_items", nombre: "Ventas · Ítems orden", descripcion: "Líneas de órdenes", grupo: "Ventas" },
+  { key: "ventas_facturas", nombre: "Ventas · Facturas", descripcion: "Comprobantes emitidos", grupo: "Ventas" },
+  { key: "ventas_factura_items", nombre: "Ventas · Ítems factura", descripcion: "Líneas de facturas", grupo: "Ventas" },
+  { key: "ventas_guias", nombre: "Ventas · Guías", descripcion: "Guías de remisión", grupo: "Ventas" },
+  { key: "ventas_guia_items", nombre: "Ventas · Ítems guía", descripcion: "Líneas de guías", grupo: "Ventas" },
+  { key: "ventas_correlativos", nombre: "Ventas · Correlativos", descripcion: "Series y numeración", grupo: "Ventas" },
+
   { key: "user_roles", nombre: "Roles de usuario", descripcion: "Asignación de roles", grupo: "Seguridad" },
+  { key: "admin_audit", nombre: "Auditoría administrativa", descripcion: "Cambios registrados por admin", grupo: "Seguridad" },
 ];
 
-async function fetchAllRows(key: string): Promise<any[]> {
+// ─── Vistas vinculadas (joins tal como se muestran en las páginas) ───
+type Vista = {
+  key: string;
+  nombre: string;
+  table: string;
+  select: string;
+  order?: string;
+  expand?: string; // campo array a expandir (una fila por elemento)
+};
+
+const VISTAS: Vista[] = [
+  {
+    key: "stock_detallado",
+    nombre: "Stock detallado",
+    table: "stock_lote_ubicacion",
+    select:
+      "cantidad_cajas,total_latas,updated_at,lotes(codigo_lote,estado,etiqueta,mercado,fecha_produccion,fecha_vencimiento,costo_por_caja,productos(codigo_base,descripcion,especie,presentacion,envase,empaque)),ubicaciones(codigo,seccion,carril,almacenes(nombre))",
+  },
+  {
+    key: "movimientos_detalle",
+    nombre: "Movimientos detallados",
+    table: "movimientos",
+    select:
+      "*,lotes(codigo_lote,estado,etiqueta,productos(codigo_base,descripcion,envase)),origen:ubicaciones!movimientos_ubicacion_origen_id_fkey(codigo),destino:ubicaciones!movimientos_ubicacion_destino_id_fkey(codigo),clientes_proveedores(nombre,documento),mercados(mercado)",
+    order: "fecha",
+  },
+  {
+    key: "insumos_mov_detalle",
+    nombre: "Movimientos de insumos detallados",
+    table: "insumos_movimientos",
+    select: "*,insumos(codigo,insumo,subcategoria,categoria,grupo,unidad,empaque)",
+    order: "fecha",
+  },
+  {
+    key: "lances_detalle",
+    nombre: "Lances con insumos",
+    table: "lances_produccion",
+    select: "*,lance_insumos(orden,nombre,presentacion,cantidad,observacion)",
+    order: "fecha",
+    expand: "lance_insumos",
+  },
+  {
+    key: "inventario_detalle",
+    nombre: "Inventarios físicos con conteo",
+    table: "inventarios_fisicos",
+    select:
+      "*,almacenes(nombre),inventario_conteo(cantidad_esperada,cantidad_contada,total_latas_esperadas,total_latas_contadas,lotes(codigo_lote),ubicaciones(codigo))",
+    order: "fecha",
+    expand: "inventario_conteo",
+  },
+  {
+    key: "cotizaciones_detalle",
+    nombre: "Cotizaciones con ítems",
+    table: "ventas_cotizaciones",
+    select:
+      "*,clientes_proveedores(nombre,documento),ventas_cot_items(descripcion,cantidad_cajas,latas,cantidad_latas,precio_unitario,descuento_pct,importe)",
+    order: "fecha_emision",
+    expand: "ventas_cot_items",
+  },
+  {
+    key: "ordenes_detalle",
+    nombre: "Órdenes con ítems",
+    table: "ventas_ordenes",
+    select:
+      "*,clientes_proveedores(nombre,documento),ventas_orden_items(descripcion,cantidad_cajas,latas,cantidad_latas,precio_unitario,importe,lotes(codigo_lote),ubicaciones(codigo))",
+    order: "fecha_emision",
+    expand: "ventas_orden_items",
+  },
+  {
+    key: "facturas_detalle",
+    nombre: "Facturas con ítems",
+    table: "ventas_facturas",
+    select:
+      "*,clientes_proveedores(nombre,documento),ventas_factura_items(descripcion,cantidad_cajas,latas,cantidad_latas,precio_unitario,valor_venta,igv_linea,importe)",
+    order: "fecha_emision",
+    expand: "ventas_factura_items",
+  },
+  {
+    key: "guias_detalle",
+    nombre: "Guías con ítems",
+    table: "ventas_guias",
+    select:
+      "*,clientes_proveedores(nombre,documento),ventas_guia_items(descripcion,cantidad_cajas,latas,cantidad_latas,lotes(codigo_lote),ubicaciones(codigo))",
+    order: "fecha_emision",
+    expand: "ventas_guia_items",
+  },
+  {
+    key: "warrants_detalle",
+    nombre: "Warrants con lote",
+    table: "warrants",
+    select: "*,lotes(codigo_lote,estado,productos(codigo_base,descripcion))",
+    order: "fecha_inicio",
+  },
+  {
+    key: "etiquetado_detalle",
+    nombre: "Etiquetado con lotes",
+    table: "ordenes_etiquetado",
+    select:
+      "*,origen:lotes!ordenes_etiquetado_lote_origen_id_fkey(codigo_lote,etiqueta),destino:lotes!ordenes_etiquetado_lote_destino_id_fkey(codigo_lote,etiqueta),ubicaciones(codigo)",
+    order: "fecha",
+  },
+];
+
+function flattenObj(obj: any, prefix = ""): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj ?? {})) {
+    const key = prefix ? `${prefix}_${k}` : k;
+    if (v && typeof v === "object" && !Array.isArray(v)) Object.assign(out, flattenObj(v, key));
+    else if (Array.isArray(v)) out[key] = JSON.stringify(v);
+    else out[key] = v ?? "";
+  }
+  return out;
+}
+
+function buildVistaRows(rows: any[], expand?: string): Record<string, any>[] {
+  const out: Record<string, any>[] = [];
+  for (const r of rows) {
+    if (expand && Array.isArray(r[expand])) {
+      const { [expand]: children, ...head } = r;
+      const base = flattenObj(head);
+      if (!children.length) out.push(base);
+      else for (const c of children) out.push({ ...base, ...flattenObj(c, "det") });
+    } else {
+      out.push(flattenObj(r));
+    }
+  }
+  return out;
+}
+
+async function fetchAllRows(key: string, select = "*", order?: string): Promise<any[]> {
   const PAGE = 1000;
   let from = 0;
   let all: any[] = [];
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const { data, error } = await (supabase as any).from(key).select("*").range(from, from + PAGE - 1);
+    let q = (supabase as any).from(key).select(select).range(from, from + PAGE - 1);
+    if (order) q = q.order(order, { ascending: true });
+    const { data, error } = await q;
     if (error) throw error;
     if (!data || data.length === 0) break;
     all = all.concat(data);
