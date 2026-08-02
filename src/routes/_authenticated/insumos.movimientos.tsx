@@ -111,6 +111,7 @@ function MovimientosInsumos() {
       qc.invalidateQueries({ queryKey: ["insumos-stock"] });
       qc.invalidateQueries({ queryKey: ["insumos-cat-select"] });
       qc.invalidateQueries({ queryKey: ["insumos-mov-recientes"] });
+      qc.invalidateQueries({ predicate: (query) => String(query.queryKey[0] ?? "").startsWith("insumo") });
     },
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });

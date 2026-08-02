@@ -52,6 +52,8 @@ function ReportesInsumos() {
           .gte("fecha", from)
           .lte("fecha", to)
           .order("fecha", { ascending: false })
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(f, t),
       ),
   });
