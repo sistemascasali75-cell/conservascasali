@@ -71,6 +71,11 @@ type ColDef = {
 
 const READ_ONLY_ALWAYS = new Set(["id", "created_at", "updated_at"]);
 
+function isReadOnlyColumn(tabla: string, columnName: string) {
+  return READ_ONLY_ALWAYS.has(columnName)
+    || (tabla === "insumos_movimientos" && columnName === "saldo_post");
+}
+
 function isNumericType(udt: string) {
   return ["int2", "int4", "int8", "numeric", "float4", "float8"].includes(udt);
 }
@@ -383,7 +388,7 @@ function EditDialog({
     // Build patch with only edited fields (skip readonly)
     const patch: Record<string, any> = {};
     for (const c of cols.data) {
-      if (READ_ONLY_ALWAYS.has(c.column_name)) continue;
+      if (isReadOnlyColumn(tabla, c.column_name)) continue;
       const orig = row[c.column_name];
       const cur = values[c.column_name];
       // Normalize empty string → null for nullable non-text
@@ -445,12 +450,15 @@ function EditDialog({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {cols.data?.map((c) => {
-            const readOnly = READ_ONLY_ALWAYS.has(c.column_name);
+            const readOnly = isReadOnlyColumn(tabla, c.column_name);
             const v = values[c.column_name];
             return (
               <div key={c.column_name} className="space-y-1">
                 <Label className="text-xs flex items-center gap-1">
                   <span className={readOnly ? "text-muted-foreground" : ""}>{c.column_name}</span>
+                  {tabla === "insumos_movimientos" && c.column_name === "saldo_post" && (
+                    <span className="text-[9px] text-muted-foreground">automático</span>
+                  )}
                   <span className="text-[9px] text-muted-foreground">{c.udt_name}</span>
                   {c.is_nullable === "NO" && !readOnly && <span className="text-destructive">*</span>}
                 </Label>

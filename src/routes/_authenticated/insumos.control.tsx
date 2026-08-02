@@ -54,13 +54,13 @@ type Mov = {
 type FormState = {
   id: string; fecha: string; insumo_id: string; tipo_mov: string;
   cantidad: string; nro_guia: string; vale_num: string;
-  proveedor: string; transportista: string; observacion: string; saldo_post: string;
+  proveedor: string; transportista: string; observacion: string;
 };
 
 const EMPTY_FORM: FormState = {
   id: "", fecha: "", insumo_id: "", tipo_mov: "INGRESO_GUIA",
   cantidad: "", nro_guia: "", vale_num: "", proveedor: "", transportista: "",
-  observacion: "", saldo_post: "",
+  observacion: "",
 };
 
 const ALLOWED_EMAIL = "insumoscasali@gmail.com";
@@ -103,6 +103,7 @@ function ControlInsumos() {
           .from("vista_insumos_movimientos").select("*")
           .order("fecha", { ascending: false })
           .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
         const chunk = (data ?? []) as Mov[];
@@ -162,7 +163,6 @@ function ControlInsumos() {
       cantidad: String(m.cantidad ?? ""), nro_guia: m.nro_guia ?? "",
       vale_num: m.vale_num ?? "", proveedor: m.proveedor ?? "",
       transportista: m.transportista ?? "", observacion: m.observacion ?? "",
-      saldo_post: m.saldo_post != null ? String(m.saldo_post) : "",
     });
     setEditOpen(true);
   };
@@ -177,7 +177,7 @@ function ControlInsumos() {
         p_nro_guia: form.nro_guia || null, p_vale_num: form.vale_num || null,
         p_proveedor: form.proveedor || null, p_transportista: form.transportista || null,
         p_observacion: form.observacion || null,
-        p_saldo_post: form.saldo_post === "" ? null : Number(form.saldo_post),
+        p_saldo_post: null,
       });
       if (error) throw error;
     },
@@ -187,6 +187,7 @@ function ControlInsumos() {
       qc.invalidateQueries({ queryKey: ["insumos-control-movs"] });
       qc.invalidateQueries({ queryKey: ["insumos-stock"] });
       qc.invalidateQueries({ queryKey: ["insumos-movs-full"] });
+      qc.invalidateQueries({ predicate: (query) => String(query.queryKey[0] ?? "").startsWith("insumo") });
     },
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
@@ -201,6 +202,7 @@ function ControlInsumos() {
       qc.invalidateQueries({ queryKey: ["insumos-control-movs"] });
       qc.invalidateQueries({ queryKey: ["insumos-stock"] });
       qc.invalidateQueries({ queryKey: ["insumos-movs-full"] });
+      qc.invalidateQueries({ predicate: (query) => String(query.queryKey[0] ?? "").startsWith("insumo") });
     },
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
@@ -221,6 +223,7 @@ function ControlInsumos() {
       qc.invalidateQueries({ queryKey: ["insumos-control-movs"] });
       qc.invalidateQueries({ queryKey: ["insumos-stock"] });
       qc.invalidateQueries({ queryKey: ["insumos-movs-full"] });
+      qc.invalidateQueries({ predicate: (query) => String(query.queryKey[0] ?? "").startsWith("insumo") });
     },
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
@@ -509,7 +512,10 @@ function ControlInsumos() {
               </Select>
             </div>
             <div className="space-y-1.5"><Label>Cantidad</Label><Input type="number" min="0" step="any" value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Saldo post.</Label><Input type="number" step="any" value={form.saldo_post} onChange={(e) => setForm({ ...form, saldo_post: e.target.value })} /></div>
+            <div className="space-y-1.5">
+              <Label>Saldo posterior</Label>
+              <Input value="Se recalcula automáticamente" disabled />
+            </div>
             <div className="space-y-1.5"><Label>N° guía</Label><Input value={form.nro_guia} onChange={(e) => setForm({ ...form, nro_guia: e.target.value })} /></div>
             <div className="space-y-1.5"><Label>N° vale</Label><Input value={form.vale_num} onChange={(e) => setForm({ ...form, vale_num: e.target.value })} /></div>
             <div className="space-y-1.5"><Label>Proveedor</Label><Input value={form.proveedor} onChange={(e) => setForm({ ...form, proveedor: e.target.value })} /></div>

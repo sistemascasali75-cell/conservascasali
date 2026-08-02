@@ -533,6 +533,7 @@ function DetalleMovimientosDialog({
           .eq("subcategoria", stock!.subcategoria)
           .order("fecha", { ascending: false })
           .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(f, t);
         if (stock!.grupo) q = q.eq("grupo", stock!.grupo);
         else q = q.is("grupo", null);

@@ -566,6 +566,7 @@ function GrupoMovimientos({ categoria, subcategoria, grupo }: { categoria: strin
           .eq("subcategoria", subcategoria)
           .order("fecha", { ascending: false })
           .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(f, t);
         query = grupo === "GENERAL"
           ? query.or("grupo.is.null,grupo.eq.GENERAL")
