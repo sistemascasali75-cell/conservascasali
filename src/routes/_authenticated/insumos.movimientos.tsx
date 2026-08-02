@@ -69,6 +69,7 @@ function MovimientosInsumos() {
           .select("*")
           .order("fecha", { ascending: false })
           .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(from, to),
       ),
   });

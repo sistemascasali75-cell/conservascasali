@@ -103,6 +103,7 @@ function ControlInsumos() {
           .from("vista_insumos_movimientos").select("*")
           .order("fecha", { ascending: false })
           .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
         const chunk = (data ?? []) as Mov[];
