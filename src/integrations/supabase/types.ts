@@ -2296,6 +2296,7 @@ export type Database = {
       }
       is_operador_or_admin: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      recalc_saldos_insumo: { Args: { p_insumo: string }; Returns: undefined }
       recalc_stock_lote_ubic: {
         Args: { p_lote: string; p_ubic: string }
         Returns: undefined
