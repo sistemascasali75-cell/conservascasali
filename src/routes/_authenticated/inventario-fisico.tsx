@@ -304,7 +304,7 @@ function DetalleInv({ id }: { id: string }) {
     <div className="space-y-4">
       <header className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <Link to="/inventario-fisico" className="text-sm text-muted-foreground hover:underline">← Volver</Link>
+          <Link to="/inventario-fisico" search={{ id: undefined }} className="text-sm text-muted-foreground hover:underline">← Volver</Link>
           <h1 className="text-3xl font-bold tracking-tight">Toma #{inv.numero}</h1>
           <p className="text-muted-foreground">{formatDate(inv.fecha)} · {(data.alm.find((a) => a.id === inv.almacen_id) as any)?.nombre}</p>
         </div>
