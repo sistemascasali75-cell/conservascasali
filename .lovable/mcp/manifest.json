@@ -1,0 +1,260 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ndpbptuaffdibrqbszpq.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "almacen-conservas-final",
+      "version": "0.1.0",
+      "title": "Almacen Conservas final"
+    },
+    "tools": [
+      {
+        "name": "buscar_productos",
+        "title": "Buscar productos",
+        "description": "Busca productos del catálogo por texto en su descripción o código.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "texto": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Texto a buscar en descripción o código del producto."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "description": "Máximo de resultados."
+            }
+          },
+          "required": [
+            "texto"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "stock_lotes",
+        "title": "Stock por lote",
+        "description": "Consulta el stock actual de conservas por lote (cajas disponibles), con filtro opcional por código de lote.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "codigo_lote": {
+              "type": "string",
+              "description": "Filtro parcial por código de lote."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "description": "Máximo de filas."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "stock_insumos",
+        "title": "Stock de insumos",
+        "description": "Consulta el saldo actual de insumos (tapas, envases, cartón, etc.).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "texto": {
+              "type": "string",
+              "description": "Filtro parcial por nombre del insumo."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100,
+              "description": "Máximo de filas."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "movimientos_insumos",
+        "title": "Movimientos de insumos",
+        "description": "Lista movimientos de insumos (ingresos y salidas) con su saldo, filtrables por insumo y rango de fechas.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "insumo": {
+              "type": "string",
+              "description": "Filtro parcial por nombre del insumo."
+            },
+            "desde": {
+              "type": "string",
+              "description": "Fecha inicial YYYY-MM-DD."
+            },
+            "hasta": {
+              "type": "string",
+              "description": "Fecha final YYYY-MM-DD."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 300,
+              "default": 50,
+              "description": "Máximo de filas."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "movimientos_almacen",
+        "title": "Movimientos de almacén",
+        "description": "Lista movimientos de almacén de conservas (entradas, salidas, traslados) con filtros por tipo, fechas y número de vale.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tipo": {
+              "type": "string",
+              "description": "Tipo de movimiento, por ejemplo ENTRADA o SALIDA."
+            },
+            "nro_vale": {
+              "type": "string",
+              "description": "Filtro parcial por número de vale."
+            },
+            "desde": {
+              "type": "string",
+              "description": "Fecha inicial YYYY-MM-DD."
+            },
+            "hasta": {
+              "type": "string",
+              "description": "Fecha final YYYY-MM-DD."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 300,
+              "default": 50,
+              "description": "Máximo de filas."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "lances_produccion",
+        "title": "Lances de producción",
+        "description": "Lista lances de producción con sus cajas/latas proyectadas, reales y envasadas, y los insumos consumidos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "desde": {
+              "type": "string",
+              "description": "Fecha inicial YYYY-MM-DD."
+            },
+            "hasta": {
+              "type": "string",
+              "description": "Fecha final YYYY-MM-DD."
+            },
+            "estado": {
+              "type": "string",
+              "enum": [
+                "BORRADOR",
+                "COMPLETO"
+              ],
+              "description": "Estado del lance."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "description": "Máximo de lances."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "consultar_vales",
+        "title": "Consultar vales",
+        "description": "Consulta vales registrados y su seguimiento, con filtro por número o estado.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "nro_vale": {
+              "type": "string",
+              "description": "Filtro parcial por número de vale."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "description": "Máximo de filas."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
