@@ -22,11 +22,19 @@ export function useSessionRole(): SessionRole {
   const [role, setRole] = useState<SessionRole>(() => getSessionRole());
   useEffect(() => {
     const handler = () => setRole(getSessionRole());
+    handler();
     window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
+    window.addEventListener("focus", handler);
+    window.addEventListener("role-verified-changed", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("focus", handler);
+      window.removeEventListener("role-verified-changed", handler);
+    };
   }, []);
   return role;
 }
+
 
 export function useIsReadOnly() {
   const r = useSessionRole();
