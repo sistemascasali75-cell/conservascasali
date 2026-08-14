@@ -22,11 +22,19 @@ export function useSessionRole(): SessionRole {
   const [role, setRole] = useState<SessionRole>(() => getSessionRole());
   useEffect(() => {
     const handler = () => setRole(getSessionRole());
+    handler();
     window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
+    window.addEventListener("focus", handler);
+    window.addEventListener("role-verified-changed", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("focus", handler);
+      window.removeEventListener("role-verified-changed", handler);
+    };
   }, []);
   return role;
 }
+
 
 export function useIsReadOnly() {
   const r = useSessionRole();
@@ -89,18 +97,27 @@ function makeDeniedThenable(): any {
 
 export function installReadOnlyGuardIfNeeded() {
   if (installed) return;
-  const role = getSessionRole();
-  if (role !== "VISITA" && role !== "INSUMOS") return;
   installed = true;
 
-  const isInsumos = role === "INSUMOS";
+  // El guard se instala una sola vez, pero evalúa el rol EN CADA LLAMADA.
+  // Así, si el usuario vuelve a autenticarse como ADMIN/OPERADOR en la misma
+  // pestaña (sin recargar), las escrituras dejan de estar bloqueadas.
+  const isBlocked = () => {
+    const role = getSessionRole();
+    return role === "VISITA" || role === "INSUMOS";
+  };
 
   const origFrom = (supabase as any).from.bind(supabase);
   (supabase as any).from = (table: string) => {
     const builder = origFrom(table);
+    if (!isBlocked()) return builder;
+    const isInsumos = getSessionRole() === "INSUMOS";
     if (isInsumos && INSUMOS_WRITE_TABLES.has(table)) return builder;
     (["insert", "update", "upsert", "delete"] as const).forEach((m) => {
-      (builder as any)[m] = (..._args: any[]) => {
+      const orig = (builder as any)[m].bind(builder);
+      (builder as any)[m] = (...args: any[]) => {
+        if (!isBlocked()) return orig(...args);
+        if (getSessionRole() === "INSUMOS" && INSUMOS_WRITE_TABLES.has(table)) return orig(...args);
         toast.error(deniedResult.error.message);
         return makeDeniedThenable();
       };
@@ -110,9 +127,11 @@ export function installReadOnlyGuardIfNeeded() {
 
   const origRpc = (supabase as any).rpc.bind(supabase);
   (supabase as any).rpc = (fn: string, ...rest: any[]) => {
+    if (!isBlocked()) return origRpc(fn, ...rest);
     if (READ_RPCS.has(fn)) return origRpc(fn, ...rest);
-    if (isInsumos && INSUMOS_WRITE_RPCS.has(fn)) return origRpc(fn, ...rest);
+    if (getSessionRole() === "INSUMOS" && INSUMOS_WRITE_RPCS.has(fn)) return origRpc(fn, ...rest);
     toast.error(deniedResult.error.message);
     return makeDeniedThenable();
   };
 }
+
