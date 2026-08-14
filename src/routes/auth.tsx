@@ -90,6 +90,7 @@ function AuthPage() {
         ROLE_SESSION_KEY,
         JSON.stringify({ role, ts: Date.now() }),
       );
+      window.dispatchEvent(new Event("role-verified-changed"));
       toast.success(`Bienvenido, ${cfg.label}`);
       navigate({ to: "/" });
     } catch (err: any) {
@@ -101,6 +102,7 @@ function AuthPage() {
 
   const handleSignOut = async () => {
     sessionStorage.removeItem(ROLE_SESSION_KEY);
+    window.dispatchEvent(new Event("role-verified-changed"));
     await supabase.auth.signOut();
     setStep("google");
     setUserEmail(null);
