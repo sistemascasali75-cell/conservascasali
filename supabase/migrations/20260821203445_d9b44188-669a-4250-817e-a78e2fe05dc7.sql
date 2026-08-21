@@ -1,0 +1,5 @@
+DROP FUNCTION IF EXISTS public.registrar_movimiento(tipo_mov_t, uuid, numeric, uuid, uuid, uuid, text, text, text, date, text, text, integer, integer, uuid, boolean, text, integer, boolean, text, date, date);
+DROP FUNCTION IF EXISTS public.registrar_movimiento(tipo_mov_t, uuid, numeric, uuid, uuid, uuid, text, text, text, date, text, text, integer, integer, uuid, boolean, text, integer, boolean, text, date, date, integer);
+DROP FUNCTION IF EXISTS public.registrar_movimiento(tipo_mov_t, uuid, numeric, uuid, uuid, uuid, text, text, text, date, text, text, integer, integer, uuid, boolean, text, integer, boolean, text, date, date, integer, text);
+DROP FUNCTION IF EXISTS public.admin_editar_movimiento(uuid, tipo_mov_t, date, uuid, uuid, uuid, numeric, integer, integer, text, text, uuid, text, text, text, uuid, boolean, text, integer, boolean, text);
+DROP FUNCTION IF EXISTS public.upsert_lote(uuid, date, date, text);
