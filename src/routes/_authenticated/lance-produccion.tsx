@@ -371,6 +371,12 @@ function LanceProduccionPage() {
           <ResumenPorProducto lances={filtered} />
         </TabsContent>
 
+        <TabsContent value="diferencial">
+          <DiferencialTab lances={filtered} />
+        </TabsContent>
+
+
+
         <TabsContent value="insumos-usados">
           <InsumosUsadosTab lances={filtered} />
         </TabsContent>
