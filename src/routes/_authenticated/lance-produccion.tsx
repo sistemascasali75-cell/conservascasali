@@ -293,6 +293,8 @@ function LanceProduccionPage() {
         <TabsList>
           <TabsTrigger value="lista">Lista de lances</TabsTrigger>
           <TabsTrigger value="resumen">Resumen por producto</TabsTrigger>
+          <TabsTrigger value="diferencial">Diferencial</TabsTrigger>
+
           <TabsTrigger value="insumos-usados">Insumos usados</TabsTrigger>
         </TabsList>
 
