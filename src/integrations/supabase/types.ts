@@ -2159,60 +2159,33 @@ export type Database = {
         }
         Returns: undefined
       }
-      admin_editar_movimiento:
-        | {
-            Args: {
-              p_autorizado?: string
-              p_cantidad_cajas: number
-              p_cliente: string
-              p_donacion?: boolean
-              p_empaque?: number
-              p_fecha: string
-              p_latas: number
-              p_lote_id: string
-              p_mercado_id?: string
-              p_motivo: string
-              p_mov: string
-              p_nro_guia: string
-              p_nro_vale: string
-              p_nro_warrant: string
-              p_observaciones: string
-              p_piso: number
-              p_tercero?: string
-              p_tiene_etiqueta?: boolean
-              p_tipo: Database["public"]["Enums"]["tipo_mov_t"]
-              p_ubic_destino: string
-              p_ubic_origen: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_autorizado?: string
-              p_cantidad_cajas: number
-              p_cliente: string
-              p_donacion?: boolean
-              p_empaque?: number
-              p_fecha: string
-              p_latas: number
-              p_lote_id: string
-              p_mercado_id?: string
-              p_motivo: string
-              p_mov: string
-              p_nro_guia: string
-              p_nro_vale: string
-              p_nro_warrant: string
-              p_observaciones: string
-              p_piso: number
-              p_tamano?: string
-              p_tercero?: string
-              p_tiene_etiqueta?: boolean
-              p_tipo: Database["public"]["Enums"]["tipo_mov_t"]
-              p_ubic_destino: string
-              p_ubic_origen: string
-            }
-            Returns: undefined
-          }
+      admin_editar_movimiento: {
+        Args: {
+          p_autorizado?: string
+          p_cantidad_cajas: number
+          p_cliente: string
+          p_donacion?: boolean
+          p_empaque?: number
+          p_fecha: string
+          p_latas: number
+          p_lote_id: string
+          p_mercado_id?: string
+          p_motivo: string
+          p_mov: string
+          p_nro_guia: string
+          p_nro_vale: string
+          p_nro_warrant: string
+          p_observaciones: string
+          p_piso: number
+          p_tamano?: string
+          p_tercero?: string
+          p_tiene_etiqueta?: boolean
+          p_tipo: Database["public"]["Enums"]["tipo_mov_t"]
+          p_ubic_destino: string
+          p_ubic_origen: string
+        }
+        Returns: undefined
+      }
       admin_eliminar_insumo_mov: { Args: { p_mov: string }; Returns: undefined }
       admin_eliminar_movimiento: { Args: { p_mov: string }; Returns: undefined }
       admin_list_table_columns: {
@@ -2301,121 +2274,36 @@ export type Database = {
         Args: { p_lote: string; p_ubic: string }
         Returns: undefined
       }
-      registrar_movimiento:
-        | {
-            Args: {
-              p_autorizado?: string
-              p_cantidad?: number
-              p_cliente_proveedor?: string
-              p_donacion?: boolean
-              p_empaque?: number
-              p_fecha?: string
-              p_inicia_warrant?: string
-              p_latas?: number
-              p_lote_id: string
-              p_mercado_id?: string
-              p_motivo?: string
-              p_nro_guia?: string
-              p_nro_vale?: string
-              p_nro_warrant?: string
-              p_observaciones?: string
-              p_piso?: number
-              p_tercero?: string
-              p_tiene_etiqueta?: boolean
-              p_tipo: Database["public"]["Enums"]["tipo_mov_t"]
-              p_ubic_destino?: string
-              p_ubic_origen?: string
-              p_vence_warrant?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_autorizado?: string
-              p_cantidad?: number
-              p_cliente_proveedor?: string
-              p_donacion?: boolean
-              p_empaque?: number
-              p_fecha?: string
-              p_inicia_warrant?: string
-              p_latas?: number
-              p_lote_id: string
-              p_mercado_id?: string
-              p_motivo?: string
-              p_nro_guia?: string
-              p_nro_vale?: string
-              p_nro_warrant?: string
-              p_observaciones?: string
-              p_piso?: number
-              p_tercero?: string
-              p_tiene_etiqueta?: boolean
-              p_tipo: Database["public"]["Enums"]["tipo_mov_t"]
-              p_total_latas?: number
-              p_ubic_destino?: string
-              p_ubic_origen?: string
-              p_vence_warrant?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_autorizado?: string
-              p_cantidad?: number
-              p_cliente_proveedor?: string
-              p_donacion?: boolean
-              p_empaque?: number
-              p_fecha?: string
-              p_inicia_warrant?: string
-              p_latas?: number
-              p_lote_id: string
-              p_mercado_id?: string
-              p_motivo?: string
-              p_nro_guia?: string
-              p_nro_vale?: string
-              p_nro_warrant?: string
-              p_observaciones?: string
-              p_piso?: number
-              p_tamano?: string
-              p_tercero?: string
-              p_tiene_etiqueta?: boolean
-              p_tipo: Database["public"]["Enums"]["tipo_mov_t"]
-              p_total_latas?: number
-              p_ubic_destino?: string
-              p_ubic_origen?: string
-              p_vence_warrant?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_autorizado?: string
-              p_cantidad?: number
-              p_cliente_proveedor?: string
-              p_donacion?: boolean
-              p_empaque?: number
-              p_estado_lote?: string
-              p_fecha?: string
-              p_inicia_warrant?: string
-              p_latas?: number
-              p_lote_id: string
-              p_mercado_id?: string
-              p_motivo?: string
-              p_nro_guia?: string
-              p_nro_vale?: string
-              p_nro_warrant?: string
-              p_observaciones?: string
-              p_piso?: number
-              p_tamano?: string
-              p_tercero?: string
-              p_tiene_etiqueta?: boolean
-              p_tipo: Database["public"]["Enums"]["tipo_mov_t"]
-              p_total_latas?: number
-              p_ubic_destino?: string
-              p_ubic_origen?: string
-              p_vence_warrant?: string
-            }
-            Returns: string
-          }
+      registrar_movimiento: {
+        Args: {
+          p_autorizado?: string
+          p_cantidad?: number
+          p_cliente_proveedor?: string
+          p_donacion?: boolean
+          p_empaque?: number
+          p_estado_lote?: string
+          p_fecha?: string
+          p_inicia_warrant?: string
+          p_latas?: number
+          p_lote_id: string
+          p_mercado_id?: string
+          p_motivo?: string
+          p_nro_guia?: string
+          p_nro_vale?: string
+          p_nro_warrant?: string
+          p_observaciones?: string
+          p_piso?: number
+          p_tamano?: string
+          p_tercero?: string
+          p_tiene_etiqueta?: boolean
+          p_tipo: Database["public"]["Enums"]["tipo_mov_t"]
+          p_total_latas?: number
+          p_ubic_destino?: string
+          p_ubic_origen?: string
+          p_vence_warrant?: string
+        }
+        Returns: string
+      }
       registrar_movimiento_insumo: {
         Args: {
           p_cantidad: number
@@ -2430,26 +2318,16 @@ export type Database = {
         }
         Returns: string
       }
-      upsert_lote:
-        | {
-            Args: {
-              p_estado: string
-              p_fp: string
-              p_fv: string
-              p_producto: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_estado: string
-              p_fp: string
-              p_fv: string
-              p_mercado?: string
-              p_producto: string
-            }
-            Returns: string
-          }
+      upsert_lote: {
+        Args: {
+          p_estado: string
+          p_fp: string
+          p_fv: string
+          p_mercado?: string
+          p_producto: string
+        }
+        Returns: string
+      }
       ventas_anular_factura: {
         Args: { p_fac: string; p_motivo?: string }
         Returns: undefined
