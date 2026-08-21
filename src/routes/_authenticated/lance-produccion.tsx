@@ -380,8 +380,9 @@ function LanceProduccionPage() {
   );
 }
 
-function KPI({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: React.ReactNode; tone?: "emerald" | "rose" }) {
-  const color = tone === "emerald" ? "text-emerald-700" : tone === "rose" ? "text-rose-700" : "";
+function KPI({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: React.ReactNode; tone?: "emerald" | "rose" | "sky" }) {
+  const color = tone === "emerald" ? "text-emerald-700" : tone === "rose" ? "text-rose-700" : tone === "sky" ? "text-sky-700" : "";
+
   return (
     <Card>
       <CardContent className="pt-6">
