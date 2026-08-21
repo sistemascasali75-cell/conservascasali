@@ -185,18 +185,20 @@ function LanceProduccionPage() {
   // Métricas del período
   const kpis = useMemo(() => {
     const totalLances = lances.length;
-    let totalReal = 0, totalProd = 0, totalMermas = 0;
+    let totalReal = 0, totalProd = 0, totalMermas = 0, totalEnvasado = 0;
     lances.forEach((l) => {
       totalProd += totalLatas(l.lance_prod_cajas, l.lance_prod_latas, l.latas_por_caja);
       totalReal += totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja);
+      totalEnvasado += totalLatas(l.envasado_cajas ?? 0, l.envasado_latas ?? 0, l.latas_por_caja);
       totalMermas +=
         totalLatas(l.merma_pruebas_cajas, l.merma_pruebas_latas, l.latas_por_caja) +
         totalLatas(l.merma_malas_cajas, l.merma_malas_latas, l.latas_por_caja) +
         totalLatas(l.merma_maquina_cajas, l.merma_maquina_latas, l.latas_por_caja) +
         totalLatas(l.merma_muestras_cajas, l.merma_muestras_latas, l.latas_por_caja);
     });
-    return { totalLances, totalReal, totalProd, totalMermas };
+    return { totalLances, totalReal, totalProd, totalMermas, totalEnvasado };
   }, [lances]);
+
 
   const exportLista = async (kind: "xlsx" | "pdf") => {
     const headers = ["N°", "Fecha", "Producto", "Cliente", "Envase", "Cajas Real (latas)", "Cajas Proyectado (latas)", "Mermas (latas)"];
@@ -263,12 +265,14 @@ function LanceProduccionPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <KPI icon={<ClipboardList className="size-4" />} label="Lances" value={kpis.totalLances} />
+        <KPI icon={<Package className="size-4" />} label="Total envasado (cajas/latas)" value={`${formatNumber(lances.reduce((a, l) => a + (l.envasado_cajas ?? 0), 0), 0)} / ${formatNumber(kpis.totalEnvasado, 0)}`} tone="sky" />
         <KPI icon={<Package className="size-4" />} label="Real (cajas/latas)" value={`${formatNumber(lances.reduce((a, l) => a + l.lance_real_cajas, 0), 0)} / ${formatNumber(kpis.totalReal, 0)}`} tone="emerald" />
         <KPI icon={<Factory className="size-4" />} label="Proyectado (cajas/latas)" value={`${formatNumber(lances.reduce((a, l) => a + l.lance_prod_cajas, 0), 0)} / ${formatNumber(kpis.totalProd, 0)}`} />
         <KPI icon={<TrendingDown className="size-4" />} label="Mermas (latas)" value={formatNumber(kpis.totalMermas, 0)} tone="rose" />
       </div>
+
 
       {/* Filtros */}
       <Card>
@@ -289,6 +293,8 @@ function LanceProduccionPage() {
         <TabsList>
           <TabsTrigger value="lista">Lista de lances</TabsTrigger>
           <TabsTrigger value="resumen">Resumen por producto</TabsTrigger>
+          <TabsTrigger value="diferencial">Diferencial</TabsTrigger>
+
           <TabsTrigger value="insumos-usados">Insumos usados</TabsTrigger>
         </TabsList>
 
@@ -365,6 +371,12 @@ function LanceProduccionPage() {
           <ResumenPorProducto lances={filtered} />
         </TabsContent>
 
+        <TabsContent value="diferencial">
+          <DiferencialTab lances={filtered} />
+        </TabsContent>
+
+
+
         <TabsContent value="insumos-usados">
           <InsumosUsadosTab lances={filtered} />
         </TabsContent>
@@ -376,8 +388,9 @@ function LanceProduccionPage() {
   );
 }
 
-function KPI({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: React.ReactNode; tone?: "emerald" | "rose" }) {
-  const color = tone === "emerald" ? "text-emerald-700" : tone === "rose" ? "text-rose-700" : "";
+function KPI({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: React.ReactNode; tone?: "emerald" | "rose" | "sky" }) {
+  const color = tone === "emerald" ? "text-emerald-700" : tone === "rose" ? "text-rose-700" : tone === "sky" ? "text-sky-700" : "";
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -441,6 +454,113 @@ function ResumenPorProducto({ lances }: { lances: Lance[] }) {
     </Card>
   );
 }
+
+/* ------------------------------------------------------------------------- */
+/* DIFERENCIAL: Real (latas) − Total envasado                                 */
+/* ------------------------------------------------------------------------- */
+
+type DifNivel = "rango" | "regular" | "alerta" | "alto";
+
+function clasificarDif(pct: number): { nivel: DifNivel; label: string; cls: string } {
+  if (pct >= 4 && pct <= 5) return { nivel: "rango", label: "En rango (4–5%)", cls: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+  if (pct >= 3 && pct < 4) return { nivel: "regular", label: "Regular (3–4%)", cls: "bg-amber-100 text-amber-800 border-amber-300" };
+  if (pct > 5) return { nivel: "alto", label: "Alto (>5%)", cls: "bg-orange-100 text-orange-800 border-orange-300" };
+  return { nivel: "alerta", label: "Alerta (<3%)", cls: "bg-rose-100 text-rose-800 border-rose-300" };
+}
+
+function DiferencialTab({ lances }: { lances: Lance[] }) {
+  const rows = useMemo(() =>
+    lances.map((l) => {
+      const real = totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja);
+      const env = totalLatas(l.envasado_cajas ?? 0, l.envasado_latas ?? 0, l.latas_por_caja);
+      const dif = real - env;
+      const pct = env > 0 ? (dif / env) * 100 : 0;
+      return { l, real, env, dif, pct, c: clasificarDif(pct) };
+    }), [lances]);
+
+  const tot = useMemo(() => {
+    const real = rows.reduce((a, r) => a + r.real, 0);
+    const env = rows.reduce((a, r) => a + r.env, 0);
+    const dif = real - env;
+    const pct = env > 0 ? (dif / env) * 100 : 0;
+    return { real, env, dif, pct, c: clasificarDif(pct) };
+  }, [rows]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KPI icon={<Package className="size-4" />} label="Total envasado (latas)" value={formatNumber(tot.env, 0)} tone="sky" />
+        <KPI icon={<Package className="size-4" />} label="Real (latas)" value={formatNumber(tot.real, 0)} tone="emerald" />
+        <KPI icon={<TrendingDown className="size-4" />} label="Diferencia (Real − Envasado)" value={formatNumber(tot.dif, 0)} />
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-xs text-muted-foreground">% Diferencia global</div>
+            <div className="text-2xl font-bold">{formatNumber(tot.pct, 2)}%</div>
+            <Badge variant="outline" className={`mt-1 ${tot.c.cls}`}>{tot.c.label}</Badge>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Diferencial por lance · Real (latas) − Total envasado</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Rangos: <span className="text-emerald-700 font-medium">4–5% en rango</span> ·{" "}
+            <span className="text-amber-700 font-medium">3–4% regular</span> ·{" "}
+            <span className="text-rose-700 font-medium">menos de 3% alerta</span>
+          </p>
+        </CardHeader>
+        <CardContent className="overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>N°</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Producto</TableHead>
+                <TableHead className="text-right">Real (latas)</TableHead>
+                <TableHead className="text-right">Total envasado (latas)</TableHead>
+                <TableHead className="text-right">Diferencia</TableHead>
+                <TableHead className="text-right">% Diferencia</TableHead>
+                <TableHead>Estado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.l.id}>
+                  <TableCell className="font-mono">#{r.l.numero}</TableCell>
+                  <TableCell>{r.l.fecha}</TableCell>
+                  <TableCell className="font-medium">{r.l.producto}</TableCell>
+                  <TableCell className="text-right text-emerald-700 font-semibold">{formatNumber(r.real, 0)}</TableCell>
+                  <TableCell className="text-right text-sky-700 font-semibold">{formatNumber(r.env, 0)}</TableCell>
+                  <TableCell className="text-right font-semibold">{formatNumber(r.dif, 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatNumber(r.pct, 2)}%</TableCell>
+                  <TableCell><Badge variant="outline" className={r.c.cls}>{r.c.label}</Badge></TableCell>
+                </TableRow>
+              ))}
+              {rows.length === 0 && (
+                <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Sin datos</TableCell></TableRow>
+              )}
+            </TableBody>
+            {rows.length > 0 && (
+              <TableBody>
+                <TableRow className="bg-muted/40 font-semibold">
+                  <TableCell colSpan={3}>Totales</TableCell>
+                  <TableCell className="text-right">{formatNumber(tot.real, 0)}</TableCell>
+                  <TableCell className="text-right">{formatNumber(tot.env, 0)}</TableCell>
+                  <TableCell className="text-right">{formatNumber(tot.dif, 0)}</TableCell>
+                  <TableCell className="text-right">{formatNumber(tot.pct, 2)}%</TableCell>
+                  <TableCell><Badge variant="outline" className={tot.c.cls}>{tot.c.label}</Badge></TableCell>
+                </TableRow>
+              </TableBody>
+            )}
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
 
 /* ------------------------------------------------------------------------- */
 /* FORM DIALOG                                                                */
