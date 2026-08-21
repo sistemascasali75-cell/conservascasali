@@ -185,18 +185,20 @@ function LanceProduccionPage() {
   // Métricas del período
   const kpis = useMemo(() => {
     const totalLances = lances.length;
-    let totalReal = 0, totalProd = 0, totalMermas = 0;
+    let totalReal = 0, totalProd = 0, totalMermas = 0, totalEnvasado = 0;
     lances.forEach((l) => {
       totalProd += totalLatas(l.lance_prod_cajas, l.lance_prod_latas, l.latas_por_caja);
       totalReal += totalLatas(l.lance_real_cajas, l.lance_real_latas, l.latas_por_caja);
+      totalEnvasado += totalLatas(l.envasado_cajas ?? 0, l.envasado_latas ?? 0, l.latas_por_caja);
       totalMermas +=
         totalLatas(l.merma_pruebas_cajas, l.merma_pruebas_latas, l.latas_por_caja) +
         totalLatas(l.merma_malas_cajas, l.merma_malas_latas, l.latas_por_caja) +
         totalLatas(l.merma_maquina_cajas, l.merma_maquina_latas, l.latas_por_caja) +
         totalLatas(l.merma_muestras_cajas, l.merma_muestras_latas, l.latas_por_caja);
     });
-    return { totalLances, totalReal, totalProd, totalMermas };
+    return { totalLances, totalReal, totalProd, totalMermas, totalEnvasado };
   }, [lances]);
+
 
   const exportLista = async (kind: "xlsx" | "pdf") => {
     const headers = ["N°", "Fecha", "Producto", "Cliente", "Envase", "Cajas Real (latas)", "Cajas Proyectado (latas)", "Mermas (latas)"];
