@@ -12,8 +12,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate, formatNumber } from "@/lib/format";
 import { toast } from "sonner";
-import { ShieldCheck, FlaskConical, Plus, Pencil, Trash2 } from "lucide-react";
+import { ShieldCheck, FlaskConical, Plus, Pencil, Trash2, FileSpreadsheet, FileText } from "lucide-react";
 import { useRoles } from "@/hooks/use-role";
+import { exportPDF, exportXLSX } from "@/lib/export";
+
+function ExportButtons({ onXlsx, onPdf, disabled }: { onXlsx: () => void; onPdf: () => void; disabled?: boolean }) {
+  return (
+    <div className="flex items-end gap-2">
+      <Button variant="outline" size="sm" className="h-9" onClick={onXlsx} disabled={disabled}>
+        <FileSpreadsheet className="size-4 mr-1" /> Excel
+      </Button>
+      <Button variant="outline" size="sm" className="h-9" onClick={onPdf} disabled={disabled}>
+        <FileText className="size-4 mr-1" /> PDF
+      </Button>
+    </div>
+  );
+}
+
+const hoy = () => new Date().toISOString().slice(0, 10);
 
 export const Route = createFileRoute("/_authenticated/certificacion")({
   component: Page,
@@ -120,6 +136,34 @@ function CertificacionTab() {
     return m;
   }, [data]);
 
+  const CERT_HEADERS = ["Lote", "Producto", "Presentación", "F. producción", "F. vencimiento", "Estado", "Certificadora", "F. certificación", "Stock (cj)"];
+  const certRows = useMemo(
+    () =>
+      lotesFiltrados.map((l: any) => {
+        const p: any = prodMap.get(l.producto_id);
+        return [
+          l.codigo_lote ?? "",
+          p?.descripcion ?? p?.codigo_base ?? "",
+          p?.envase ?? "",
+          l.fecha_produccion ? formatDate(l.fecha_produccion) : "",
+          l.fecha_vencimiento ? formatDate(l.fecha_vencimiento) : "",
+          l.estado ?? "",
+          l.certificadora ?? "",
+          l.fecha_certificacion ? formatDate(l.fecha_certificacion) : "",
+          Number(l.stock ?? 0),
+        ];
+      }),
+    [lotesFiltrados, prodMap],
+  );
+
+  const certSubtitle = `Estado: ${filterEstado}${search ? ` · Búsqueda: "${search}"` : ""} · ${lotesFiltrados.length} lotes`;
+  const certSummary = [
+    { label: "Lotes", value: lotesFiltrados.length },
+    { label: "Pendientes", value: pendientes.length },
+    { label: "Certificados", value: certificados.length },
+    { label: "Stock total (cj)", value: formatNumber(lotesFiltrados.reduce((s: number, l: any) => s + Number(l.stock ?? 0), 0)) },
+  ];
+
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -147,6 +191,28 @@ function CertificacionTab() {
             </SelectContent>
           </Select>
         </div>
+        <ExportButtons
+          disabled={certRows.length === 0}
+          onXlsx={() =>
+            exportXLSX({
+              sheetName: "Certificacion",
+              headers: CERT_HEADERS,
+              rows: certRows,
+              summary: certSummary,
+              filename: `certificacion_${hoy()}.xlsx`,
+            })
+          }
+          onPdf={() =>
+            exportPDF({
+              title: "Certificación de lotes",
+              subtitle: certSubtitle,
+              headers: CERT_HEADERS,
+              rows: certRows,
+              summary: certSummary,
+              filename: `certificacion_${hoy()}.pdf`,
+            })
+          }
+        />
       </Card>
 
       <Card className="overflow-hidden">
@@ -366,6 +432,38 @@ function CalidadTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const CAL_HEADERS = ["Item", "Usuario", "Producto", "Presentación", "Lote / Código certif.", "xCertif", "Producido", "Codificado", "Certifica", "Fecha certif.", "Obs."];
+  const calRows = useMemo(
+    () =>
+      filtered.map((r) => [
+        r.item ?? "",
+        r.usuario ?? "",
+        r.producto ?? "",
+        r.presentacion ?? "",
+        r.lote_codigo ?? "",
+        r.xcertif ?? 0,
+        r.producido ?? 0,
+        r.codificado ?? "",
+        r.certifica ?? "",
+        r.fecha_certif ? formatDate(r.fecha_certif) : "",
+        r.obs ?? "",
+      ]),
+    [filtered],
+  );
+  const calSubtitle = [
+    `${filtered.length} registros`,
+    fUsuario !== "TODOS" ? `Usuario: ${fUsuario}` : null,
+    fCertifica !== "TODOS" ? `Certifica: ${fCertifica}` : null,
+    fObs !== "TODOS" ? `Obs: ${fObs}` : null,
+    search ? `Búsqueda: "${search}"` : null,
+  ].filter(Boolean).join(" · ");
+  const calSummary = [
+    { label: "Registros", value: totales.total },
+    { label: "Certificados (SI)", value: totales.certificados },
+    { label: "Total xCertif", value: formatNumber(totales.totalCajas) },
+    { label: "Total producido", value: formatNumber(filtered.reduce((s, r) => s + Number(r.producido ?? 0), 0)) },
+  ];
+
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -410,6 +508,28 @@ function CalidadTab() {
             </SelectContent>
           </Select>
         </div>
+        <ExportButtons
+          disabled={calRows.length === 0}
+          onXlsx={() =>
+            exportXLSX({
+              sheetName: "Calidad",
+              headers: CAL_HEADERS,
+              rows: calRows,
+              summary: calSummary,
+              filename: `calidad_codigos_${hoy()}.xlsx`,
+            })
+          }
+          onPdf={() =>
+            exportPDF({
+              title: "Control de códigos de calidad",
+              subtitle: calSubtitle,
+              headers: CAL_HEADERS,
+              rows: calRows,
+              summary: calSummary,
+              filename: `calidad_codigos_${hoy()}.pdf`,
+            })
+          }
+        />
         {canWrite && (
           <Button onClick={() => setEdit({ ...EMPTY_CALIDAD })}><Plus className="size-4 mr-1" /> Nuevo</Button>
         )}
