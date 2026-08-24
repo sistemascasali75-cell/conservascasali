@@ -136,6 +136,34 @@ function CertificacionTab() {
     return m;
   }, [data]);
 
+  const CERT_HEADERS = ["Lote", "Producto", "Presentación", "F. producción", "F. vencimiento", "Estado", "Certificadora", "F. certificación", "Stock (cj)"];
+  const certRows = useMemo(
+    () =>
+      lotesFiltrados.map((l: any) => {
+        const p: any = prodMap.get(l.producto_id);
+        return [
+          l.codigo_lote ?? "",
+          p?.descripcion ?? p?.codigo_base ?? "",
+          p?.envase ?? "",
+          l.fecha_produccion ? formatDate(l.fecha_produccion) : "",
+          l.fecha_vencimiento ? formatDate(l.fecha_vencimiento) : "",
+          l.estado ?? "",
+          l.certificadora ?? "",
+          l.fecha_certificacion ? formatDate(l.fecha_certificacion) : "",
+          Number(l.stock ?? 0),
+        ];
+      }),
+    [lotesFiltrados, prodMap],
+  );
+
+  const certSubtitle = `Estado: ${filterEstado}${search ? ` · Búsqueda: "${search}"` : ""} · ${lotesFiltrados.length} lotes`;
+  const certSummary = [
+    { label: "Lotes", value: lotesFiltrados.length },
+    { label: "Pendientes", value: pendientes.length },
+    { label: "Certificados", value: certificados.length },
+    { label: "Stock total (cj)", value: formatNumber(lotesFiltrados.reduce((s: number, l: any) => s + Number(l.stock ?? 0), 0)) },
+  ];
+
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
