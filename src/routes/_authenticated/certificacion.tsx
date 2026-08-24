@@ -508,6 +508,28 @@ function CalidadTab() {
             </SelectContent>
           </Select>
         </div>
+        <ExportButtons
+          disabled={calRows.length === 0}
+          onXlsx={() =>
+            exportXLSX({
+              sheetName: "Calidad",
+              headers: CAL_HEADERS,
+              rows: calRows,
+              summary: calSummary,
+              filename: `calidad_codigos_${hoy()}.xlsx`,
+            })
+          }
+          onPdf={() =>
+            exportPDF({
+              title: "Control de códigos de calidad",
+              subtitle: calSubtitle,
+              headers: CAL_HEADERS,
+              rows: calRows,
+              summary: calSummary,
+              filename: `calidad_codigos_${hoy()}.pdf`,
+            })
+          }
+        />
         {canWrite && (
           <Button onClick={() => setEdit({ ...EMPTY_CALIDAD })}><Plus className="size-4 mr-1" /> Nuevo</Button>
         )}
