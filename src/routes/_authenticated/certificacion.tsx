@@ -191,6 +191,28 @@ function CertificacionTab() {
             </SelectContent>
           </Select>
         </div>
+        <ExportButtons
+          disabled={certRows.length === 0}
+          onXlsx={() =>
+            exportXLSX({
+              sheetName: "Certificacion",
+              headers: CERT_HEADERS,
+              rows: certRows,
+              summary: certSummary,
+              filename: `certificacion_${hoy()}.xlsx`,
+            })
+          }
+          onPdf={() =>
+            exportPDF({
+              title: "Certificación de lotes",
+              subtitle: certSubtitle,
+              headers: CERT_HEADERS,
+              rows: certRows,
+              summary: certSummary,
+              filename: `certificacion_${hoy()}.pdf`,
+            })
+          }
+        />
       </Card>
 
       <Card className="overflow-hidden">
