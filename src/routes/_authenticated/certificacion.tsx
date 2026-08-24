@@ -12,8 +12,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate, formatNumber } from "@/lib/format";
 import { toast } from "sonner";
-import { ShieldCheck, FlaskConical, Plus, Pencil, Trash2 } from "lucide-react";
+import { ShieldCheck, FlaskConical, Plus, Pencil, Trash2, FileSpreadsheet, FileText } from "lucide-react";
 import { useRoles } from "@/hooks/use-role";
+import { exportPDF, exportXLSX } from "@/lib/export";
+
+function ExportButtons({ onXlsx, onPdf, disabled }: { onXlsx: () => void; onPdf: () => void; disabled?: boolean }) {
+  return (
+    <div className="flex items-end gap-2">
+      <Button variant="outline" size="sm" className="h-9" onClick={onXlsx} disabled={disabled}>
+        <FileSpreadsheet className="size-4 mr-1" /> Excel
+      </Button>
+      <Button variant="outline" size="sm" className="h-9" onClick={onPdf} disabled={disabled}>
+        <FileText className="size-4 mr-1" /> PDF
+      </Button>
+    </div>
+  );
+}
+
+const hoy = () => new Date().toISOString().slice(0, 10);
 
 export const Route = createFileRoute("/_authenticated/certificacion")({
   component: Page,
