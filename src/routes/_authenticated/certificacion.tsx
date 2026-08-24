@@ -432,6 +432,38 @@ function CalidadTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const CAL_HEADERS = ["Item", "Usuario", "Producto", "Presentación", "Lote / Código certif.", "xCertif", "Producido", "Codificado", "Certifica", "Fecha certif.", "Obs."];
+  const calRows = useMemo(
+    () =>
+      filtered.map((r) => [
+        r.item ?? "",
+        r.usuario ?? "",
+        r.producto ?? "",
+        r.presentacion ?? "",
+        r.lote_codigo ?? "",
+        r.xcertif ?? 0,
+        r.producido ?? 0,
+        r.codificado ?? "",
+        r.certifica ?? "",
+        r.fecha_certif ? formatDate(r.fecha_certif) : "",
+        r.obs ?? "",
+      ]),
+    [filtered],
+  );
+  const calSubtitle = [
+    `${filtered.length} registros`,
+    fUsuario !== "TODOS" ? `Usuario: ${fUsuario}` : null,
+    fCertifica !== "TODOS" ? `Certifica: ${fCertifica}` : null,
+    fObs !== "TODOS" ? `Obs: ${fObs}` : null,
+    search ? `Búsqueda: "${search}"` : null,
+  ].filter(Boolean).join(" · ");
+  const calSummary = [
+    { label: "Registros", value: totales.total },
+    { label: "Certificados (SI)", value: totales.certificados },
+    { label: "Total xCertif", value: formatNumber(totales.totalCajas) },
+    { label: "Total producido", value: formatNumber(filtered.reduce((s, r) => s + Number(r.producido ?? 0), 0)) },
+  ];
+
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
