@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { ShieldCheck, FlaskConical, Plus, Pencil, Trash2, FileSpreadsheet, FileText } from "lucide-react";
 import { useRoles } from "@/hooks/use-role";
 import { exportPDF, exportXLSX } from "@/lib/export";
+import { CalidadImport } from "@/components/calidad-import";
 
 function ExportButtons({ onXlsx, onPdf, disabled }: { onXlsx: () => void; onPdf: () => void; disabled?: boolean }) {
   return (
@@ -376,6 +377,11 @@ function CalidadTab() {
   });
 
   const usuarios = useMemo(() => Array.from(new Set(rows.map((r) => r.usuario).filter(Boolean))) as string[], [rows]);
+  const itemsExistentes = useMemo(() => {
+    const m = new Map<number, string>();
+    rows.forEach((r) => { if (r.item != null) m.set(Number(r.item), r.id); });
+    return m;
+  }, [rows]);
   const obsList = useMemo(() => Array.from(new Set(rows.map((r) => r.obs).filter(Boolean))) as string[], [rows]);
   const certificaList = useMemo(() => Array.from(new Set(rows.map((r) => r.certifica).filter(Boolean))) as string[], [rows]);
 
@@ -530,6 +536,7 @@ function CalidadTab() {
             })
           }
         />
+        {canWrite && <CalidadImport existingItems={itemsExistentes} />}
         {canWrite && (
           <Button onClick={() => setEdit({ ...EMPTY_CALIDAD })}><Plus className="size-4 mr-1" /> Nuevo</Button>
         )}
