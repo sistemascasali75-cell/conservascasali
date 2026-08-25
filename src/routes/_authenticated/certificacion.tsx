@@ -535,6 +535,7 @@ function CalidadTab() {
             })
           }
         />
+        {canWrite && <CalidadImport existingItems={itemsExistentes} />}
         {canWrite && (
           <Button onClick={() => setEdit({ ...EMPTY_CALIDAD })}><Plus className="size-4 mr-1" /> Nuevo</Button>
         )}
