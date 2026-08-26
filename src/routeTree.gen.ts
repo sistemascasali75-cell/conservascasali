@@ -17,6 +17,7 @@ import { Route as AuthenticatedWarrantsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedTrasladoRouteImport } from './routes/_authenticated/traslado'
 import { Route as AuthenticatedSalidaRouteImport } from './routes/_authenticated/salida'
+import { Route as AuthenticatedMuestreoRouteImport } from './routes/_authenticated/muestreo'
 import { Route as AuthenticatedMermasRouteImport } from './routes/_authenticated/mermas'
 import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
 import { Route as AuthenticatedLanceProduccionRouteImport } from './routes/_authenticated/lance-produccion'
@@ -95,6 +96,11 @@ const AuthenticatedTrasladoRoute = AuthenticatedTrasladoRouteImport.update({
 const AuthenticatedSalidaRoute = AuthenticatedSalidaRouteImport.update({
   id: '/salida',
   path: '/salida',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMuestreoRoute = AuthenticatedMuestreoRouteImport.update({
+  id: '/muestreo',
+  path: '/muestreo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMermasRoute = AuthenticatedMermasRouteImport.update({
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/lance-produccion': typeof AuthenticatedLanceProduccionRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/mermas': typeof AuthenticatedMermasRoute
+  '/muestreo': typeof AuthenticatedMuestreoRoute
   '/salida': typeof AuthenticatedSalidaRoute
   '/traslado': typeof AuthenticatedTrasladoRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
@@ -396,6 +403,7 @@ export interface FileRoutesByTo {
   '/lance-produccion': typeof AuthenticatedLanceProduccionRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/mermas': typeof AuthenticatedMermasRoute
+  '/muestreo': typeof AuthenticatedMuestreoRoute
   '/salida': typeof AuthenticatedSalidaRoute
   '/traslado': typeof AuthenticatedTrasladoRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/_authenticated/lance-produccion': typeof AuthenticatedLanceProduccionRoute
   '/_authenticated/mapa': typeof AuthenticatedMapaRoute
   '/_authenticated/mermas': typeof AuthenticatedMermasRoute
+  '/_authenticated/muestreo': typeof AuthenticatedMuestreoRoute
   '/_authenticated/salida': typeof AuthenticatedSalidaRoute
   '/_authenticated/traslado': typeof AuthenticatedTrasladoRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
@@ -499,6 +508,7 @@ export interface FileRouteTypes {
     | '/lance-produccion'
     | '/mapa'
     | '/mermas'
+    | '/muestreo'
     | '/salida'
     | '/traslado'
     | '/usuarios'
@@ -547,6 +557,7 @@ export interface FileRouteTypes {
     | '/lance-produccion'
     | '/mapa'
     | '/mermas'
+    | '/muestreo'
     | '/salida'
     | '/traslado'
     | '/usuarios'
@@ -597,6 +608,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lance-produccion'
     | '/_authenticated/mapa'
     | '/_authenticated/mermas'
+    | '/_authenticated/muestreo'
     | '/_authenticated/salida'
     | '/_authenticated/traslado'
     | '/_authenticated/usuarios'
@@ -691,6 +703,13 @@ declare module '@tanstack/react-router' {
       path: '/salida'
       fullPath: '/salida'
       preLoaderRoute: typeof AuthenticatedSalidaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/muestreo': {
+      id: '/_authenticated/muestreo'
+      path: '/muestreo'
+      fullPath: '/muestreo'
+      preLoaderRoute: typeof AuthenticatedMuestreoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mermas': {
@@ -994,6 +1013,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLanceProduccionRoute: typeof AuthenticatedLanceProduccionRoute
   AuthenticatedMapaRoute: typeof AuthenticatedMapaRoute
   AuthenticatedMermasRoute: typeof AuthenticatedMermasRoute
+  AuthenticatedMuestreoRoute: typeof AuthenticatedMuestreoRoute
   AuthenticatedSalidaRoute: typeof AuthenticatedSalidaRoute
   AuthenticatedTrasladoRoute: typeof AuthenticatedTrasladoRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
@@ -1038,6 +1058,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLanceProduccionRoute: AuthenticatedLanceProduccionRoute,
   AuthenticatedMapaRoute: AuthenticatedMapaRoute,
   AuthenticatedMermasRoute: AuthenticatedMermasRoute,
+  AuthenticatedMuestreoRoute: AuthenticatedMuestreoRoute,
   AuthenticatedSalidaRoute: AuthenticatedSalidaRoute,
   AuthenticatedTrasladoRoute: AuthenticatedTrasladoRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
