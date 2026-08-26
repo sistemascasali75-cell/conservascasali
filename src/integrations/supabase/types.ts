@@ -865,6 +865,108 @@ export type Database = {
           },
         ]
       }
+      muestreos: {
+        Row: {
+          actividad: string
+          aplicado: boolean
+          carril: string | null
+          created_at: string
+          empaque: number
+          fecha: string
+          id: string
+          lote_id: string
+          merma_cajas: number
+          merma_latas: number
+          merma_total_latas: number
+          nuevo_lote_id: string | null
+          observacion: string | null
+          revisado: boolean
+          total_latas: number
+          ubicacion_id: string | null
+          updated_at: string
+          usuario_id: string | null
+          usuario_nombre: string | null
+        }
+        Insert: {
+          actividad?: string
+          aplicado?: boolean
+          carril?: string | null
+          created_at?: string
+          empaque?: number
+          fecha?: string
+          id?: string
+          lote_id: string
+          merma_cajas?: number
+          merma_latas?: number
+          merma_total_latas?: number
+          nuevo_lote_id?: string | null
+          observacion?: string | null
+          revisado?: boolean
+          total_latas?: number
+          ubicacion_id?: string | null
+          updated_at?: string
+          usuario_id?: string | null
+          usuario_nombre?: string | null
+        }
+        Update: {
+          actividad?: string
+          aplicado?: boolean
+          carril?: string | null
+          created_at?: string
+          empaque?: number
+          fecha?: string
+          id?: string
+          lote_id?: string
+          merma_cajas?: number
+          merma_latas?: number
+          merma_total_latas?: number
+          nuevo_lote_id?: string | null
+          observacion?: string | null
+          revisado?: boolean
+          total_latas?: number
+          ubicacion_id?: string | null
+          updated_at?: string
+          usuario_id?: string | null
+          usuario_nombre?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "muestreos_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "muestreos_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_lote"
+            referencedColumns: ["lote_id"]
+          },
+          {
+            foreignKeyName: "muestreos_nuevo_lote_id_fkey"
+            columns: ["nuevo_lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "muestreos_nuevo_lote_id_fkey"
+            columns: ["nuevo_lote_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_lote"
+            referencedColumns: ["lote_id"]
+          },
+          {
+            foreignKeyName: "muestreos_ubicacion_id_fkey"
+            columns: ["ubicacion_id"]
+            isOneToOne: false
+            referencedRelation: "ubicaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordenes_etiquetado: {
         Row: {
           cantidad_etiquetada: number
