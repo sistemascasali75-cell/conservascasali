@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      actividades: {
+        Row: {
+          activo: boolean
+          created_at: string
+          nombre: string
+          observacion: string | null
+          orden: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          nombre: string
+          observacion?: string | null
+          orden?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          nombre?: string
+          observacion?: string | null
+          orden?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_audit: {
         Row: {
           accion: string
@@ -872,6 +899,7 @@ export type Database = {
           carril: string | null
           created_at: string
           empaque: number
+          estado_lote: string | null
           fecha: string
           id: string
           lote_id: string
@@ -893,6 +921,7 @@ export type Database = {
           carril?: string | null
           created_at?: string
           empaque?: number
+          estado_lote?: string | null
           fecha?: string
           id?: string
           lote_id: string
@@ -914,6 +943,7 @@ export type Database = {
           carril?: string | null
           created_at?: string
           empaque?: number
+          estado_lote?: string | null
           fecha?: string
           id?: string
           lote_id?: string
@@ -2375,6 +2405,18 @@ export type Database = {
       recalc_stock_lote_ubic: {
         Args: { p_lote: string; p_ubic: string }
         Returns: undefined
+      }
+      registrar_merma_muestreo: {
+        Args: {
+          p_empaque?: number
+          p_fecha?: string
+          p_lote_id: string
+          p_motivo?: string
+          p_observacion?: string
+          p_total_latas: number
+          p_ubic_origen: string
+        }
+        Returns: string
       }
       registrar_movimiento: {
         Args: {
