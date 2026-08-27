@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/muestreo")({
   }),
 });
 
-const ACTIVIDADES = [
+const ACTIVIDADES_FALLBACK = [
   "MUESTREO",
   "CAMBIO DE LOTE",
   "REVISIÓN",
@@ -75,6 +75,7 @@ type MuestreoRow = {
   empaque: number;
   total_latas: number;
   actividad: string;
+  estado_lote: string | null;
   nuevo_lote_id: string | null;
   merma_cajas: number;
   merma_latas: number;
@@ -85,6 +86,7 @@ type MuestreoRow = {
   usuario_nombre: string | null;
   created_at: string;
 };
+
 
 function useCatalogos() {
   return useQuery({
