@@ -170,7 +170,9 @@ function MuestreoPage() {
   const [empaque24, setEmpaque24] = useState(false);
   const [totalLatas, setTotalLatas] = useState<number | "">("");
   const [actividad, setActividad] = useState("MUESTREO");
+  const [estadoLote, setEstadoLote] = useState("");
   const [nuevoLoteId, setNuevoLoteId] = useState("");
+
   const [mermaCajas, setMermaCajas] = useState<string>("");
   const [mermaLatas, setMermaLatas] = useState<string>("");
   const [revisado, setRevisado] = useState(false);
