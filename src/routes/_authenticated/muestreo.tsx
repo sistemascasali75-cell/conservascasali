@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/muestreo")({
   }),
 });
 
-const ACTIVIDADES = [
+const ACTIVIDADES_FALLBACK = [
   "MUESTREO",
   "CAMBIO DE LOTE",
   "REVISIÓN",
@@ -75,6 +75,7 @@ type MuestreoRow = {
   empaque: number;
   total_latas: number;
   actividad: string;
+  estado_lote: string | null;
   nuevo_lote_id: string | null;
   merma_cajas: number;
   merma_latas: number;
@@ -86,16 +87,19 @@ type MuestreoRow = {
   created_at: string;
 };
 
+
 function useCatalogos() {
   return useQuery({
     queryKey: ["catalogos-muestreo"],
     queryFn: async () => {
-      const [l, s, u, a, p] = await Promise.all([
+      const [l, s, u, a, p, ac, es] = await Promise.all([
         supabase.from("lotes").select("*").order("codigo_lote"),
         supabase.from("stock_lote_ubicacion").select("*"),
         supabase.from("ubicaciones").select("*").order("codigo"),
         supabase.from("almacenes").select("*"),
         supabase.from("productos").select("*").order("codigo_base"),
+        supabase.from("actividades" as any).select("*").order("orden"),
+        supabase.from("estados" as any).select("*").order("orden"),
       ]);
       return {
         lotes: l.data ?? [],
@@ -103,10 +107,13 @@ function useCatalogos() {
         ubicaciones: u.data ?? [],
         almacenes: a.data ?? [],
         productos: p.data ?? [],
+        actividades: (ac.data ?? []) as any[],
+        estados: (es.data ?? []) as any[],
       };
     },
   });
 }
+
 
 function useMuestreos() {
   return useQuery({
@@ -163,7 +170,9 @@ function MuestreoPage() {
   const [empaque24, setEmpaque24] = useState(false);
   const [totalLatas, setTotalLatas] = useState<number | "">("");
   const [actividad, setActividad] = useState("MUESTREO");
+  const [estadoLote, setEstadoLote] = useState("");
   const [nuevoLoteId, setNuevoLoteId] = useState("");
+
   const [mermaCajas, setMermaCajas] = useState<string>("");
   const [mermaLatas, setMermaLatas] = useState<string>("");
   const [revisado, setRevisado] = useState(false);
