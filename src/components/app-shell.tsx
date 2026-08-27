@@ -72,6 +72,7 @@ const items: Item[] = [
   { to: "/entrada", label: "Registrar Entrada", icon: ArrowDownToLine, section: "Operaciones", operador: true },
   { to: "/salida", label: "Registrar Salida", icon: ArrowUpFromLine, section: "Operaciones", operador: true },
   { to: "/traslado", label: "Traslado", icon: Shuffle, section: "Operaciones", operador: true },
+  { to: "/muestreo", label: "Muestreo", icon: Beaker, section: "Operaciones", operador: true },
   { to: "/etiquetado", label: "Etiquetado", icon: Tag, section: "Operaciones", operador: true },
   { to: "/certificacion", label: "Certificación", icon: ShieldCheck, section: "Operaciones", operador: true },
   { to: "/mermas", label: "Mermas y Ajustes", icon: AlertTriangle, section: "Operaciones", roles: ["ADMIN", "OPERADOR"], operador: true },
