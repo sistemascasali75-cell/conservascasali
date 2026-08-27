@@ -92,12 +92,14 @@ function useCatalogos() {
   return useQuery({
     queryKey: ["catalogos-muestreo"],
     queryFn: async () => {
-      const [l, s, u, a, p] = await Promise.all([
+      const [l, s, u, a, p, ac, es] = await Promise.all([
         supabase.from("lotes").select("*").order("codigo_lote"),
         supabase.from("stock_lote_ubicacion").select("*"),
         supabase.from("ubicaciones").select("*").order("codigo"),
         supabase.from("almacenes").select("*"),
         supabase.from("productos").select("*").order("codigo_base"),
+        supabase.from("actividades" as any).select("*").order("orden"),
+        supabase.from("estados" as any).select("*").order("orden"),
       ]);
       return {
         lotes: l.data ?? [],
@@ -105,10 +107,13 @@ function useCatalogos() {
         ubicaciones: u.data ?? [],
         almacenes: a.data ?? [],
         productos: p.data ?? [],
+        actividades: (ac.data ?? []) as any[],
+        estados: (es.data ?? []) as any[],
       };
     },
   });
 }
+
 
 function useMuestreos() {
   return useQuery({
