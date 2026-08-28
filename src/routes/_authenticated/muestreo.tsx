@@ -446,6 +446,8 @@ function MuestreoPage() {
         Number(r.total_latas ?? 0),
         Math.floor(Number(r.total_latas ?? 0) / Math.max(1, r.empaque || 48)),
         r.actividad,
+        r.estado_lote ?? "",
+
         r.nuevoCodigo,
         Number(r.merma_cajas ?? 0),
         Number(r.merma_latas ?? 0),
