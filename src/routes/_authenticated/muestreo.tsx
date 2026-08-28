@@ -503,7 +503,10 @@ function MuestreoPage() {
                   onValueChange={(v) => {
                     setLoteId(v);
                     setUbicacionId("");
+                    const l: any = loteById.get(v);
+                    setEstadoLote(l?.estado ?? "");
                   }}
+
                   options={loteOptions}
                   placeholder="Buscar lote…"
                   searchPlaceholder="Código, producto, estado…"
