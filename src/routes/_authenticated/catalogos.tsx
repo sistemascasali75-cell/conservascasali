@@ -785,3 +785,160 @@ function SelectField({ label, value, onChange, options }: { label: string; value
     </div>
   );
 }
+
+// ---------- ACTIVIDAD (usado en Muestreo) ----------
+function ActividadTab() {
+  const qc = useQueryClient();
+  const [form, setForm] = useState<any>({ nombre: "", observacion: "", orden: 0 });
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+
+  const { data } = useQuery({
+    queryKey: ["actividades-cat"],
+    queryFn: async () =>
+      (await supabase.from("actividades" as any).select("*").order("orden")).data ?? [],
+  });
+
+  const refresh = () => qc.invalidateQueries();
+
+  const save = async () => {
+    if (!form.nombre.trim()) return toast.error("El nombre es obligatorio");
+    const { error } = await supabase.from("actividades" as any).insert({
+      nombre: form.nombre.trim().toUpperCase(),
+      observacion: form.observacion?.trim() || null,
+      orden: Number(form.orden) || 0,
+    } as any);
+    if (error) return toast.error(error.message);
+    toast.success("Actividad creada");
+    setForm({ nombre: "", observacion: "", orden: 0 });
+    refresh();
+  };
+
+  const saveEdit = async () => {
+    const { error } = await supabase
+      .from("actividades" as any)
+      .update({
+        observacion: editForm.observacion?.trim() || null,
+        orden: Number(editForm.orden) || 0,
+        activo: editForm.activo !== false,
+      } as any)
+      .eq("nombre", editing.nombre);
+    if (error) return toast.error(error.message);
+    toast.success("Actualizado");
+    setEditing(null);
+    refresh();
+  };
+
+  const remove = async (a: any) => {
+    if (!confirmDelete(`actividad ${a.nombre}`)) return;
+    const { error } = await supabase.from("actividades" as any).delete().eq("nombre", a.nombre);
+    if (error) return toast.error(error.message);
+    toast.success("Eliminado");
+    refresh();
+  };
+
+  return (
+    <Card className="mt-4 p-4 space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Catálogo de actividades de muestreo. Se usa como lista desplegable en la página Muestreo
+        (campo Actividad).
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+        <Input
+          placeholder="Nombre (ej: MUESTREO)"
+          value={form.nombre}
+          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+        />
+        <Input
+          placeholder="Orden"
+          type="number"
+          value={form.orden}
+          onChange={(e) => setForm({ ...form, orden: e.target.value })}
+        />
+        <div className="md:col-span-2">
+          <Textarea
+            placeholder="Observación"
+            rows={1}
+            value={form.observacion}
+            onChange={(e) => setForm({ ...form, observacion: e.target.value })}
+          />
+        </div>
+        <Button onClick={save}><Plus className="size-4 mr-1" /> Agregar</Button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="text-left px-3 py-2 w-16">Orden</th>
+              <th className="text-left px-3 py-2">Actividad</th>
+              <th className="text-left px-3 py-2">Observación</th>
+              <th className="text-left px-3 py-2 w-24">Estado</th>
+              <th className="text-right px-3 py-2 w-24">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(data ?? []).map((a: any) => (
+              <tr key={a.nombre} className="border-t">
+                <td className="px-3 py-2 font-mono">{a.orden}</td>
+                <td className="px-3 py-2 font-semibold">{a.nombre}</td>
+                <td className="px-3 py-2 text-muted-foreground">{a.observacion ?? "—"}</td>
+                <td className="px-3 py-2">
+                  <Badge variant={a.activo === false ? "outline" : "secondary"}>
+                    {a.activo === false ? "Inactiva" : "Activa"}
+                  </Badge>
+                </td>
+                <td className="px-3 py-2">
+                  <RowActions
+                    onEdit={() => { setEditing(a); setEditForm({ ...a }); }}
+                    onDelete={() => remove(a)}
+                  />
+                </td>
+              </tr>
+            ))}
+            {(data ?? []).length === 0 && (
+              <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">Sin actividades</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar actividad · {editing?.nombre}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Orden</Label>
+              <Input
+                type="number"
+                value={editForm.orden ?? 0}
+                onChange={(e) => setEditForm({ ...editForm, orden: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Observación</Label>
+              <Textarea
+                rows={3}
+                value={editForm.observacion ?? ""}
+                onChange={(e) => setEditForm({ ...editForm, observacion: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Estado</Label>
+              <Select
+                value={editForm.activo === false ? "no" : "si"}
+                onValueChange={(v) => setEditForm({ ...editForm, activo: v === "si" })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="si">Activa</SelectItem>
+                  <SelectItem value="no">Inactiva</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={saveEdit} className="w-full">Guardar cambios</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
