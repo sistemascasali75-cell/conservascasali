@@ -256,9 +256,11 @@ function MuestreoPage() {
     setMermaCajas("");
     setMermaLatas("");
     setObservacion("");
+    setEstadoLote("");
     setRevisado(false);
     setAplicarInventario(false);
   };
+
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
