@@ -185,7 +185,28 @@ function MuestreoPage() {
     (Number.parseInt(mermaCajas || "0", 10) || 0) * emp +
     (Number.parseInt(mermaLatas || "0", 10) || 0);
 
+  // Código previsto del lote de merma: mismo código con la 1ª letra cambiada por "M"
+  const mermaLoteCodigo = useMemo(() => {
+    const l: any = loteId ? loteById.get(loteId) : null;
+    if (!l?.codigo_lote) return "";
+    return "M" + String(l.codigo_lote).slice(1);
+  }, [loteId, loteById]);
+
+  const actividadOptions = useMemo<string[]>(() => {
+
+    const list = (cat?.actividades ?? [])
+      .filter((a: any) => a.activo !== false)
+      .map((a: any) => String(a.nombre));
+    return list.length ? list : ACTIVIDADES_FALLBACK;
+  }, [cat]);
+
+  const estadoOptions = useMemo<string[]>(() => {
+    const list = (cat?.estados ?? []).map((s: any) => String(s.nombre));
+    return list.length ? list : ["DISPONIBLE", "INMOVILIZADO", "POR_CERTIFICAR", "MERMA"];
+  }, [cat]);
+
   const loteOptions = useMemo<SearchSelectOption[]>(
+
     () =>
       (cat?.lotes ?? []).map((l: any) => {
         const prod: any = prodById.get(l.producto_id);
@@ -243,9 +264,11 @@ function MuestreoPage() {
     setMermaCajas("");
     setMermaLatas("");
     setObservacion("");
+    setEstadoLote("");
     setRevisado(false);
     setAplicarInventario(false);
   };
+
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,17 +303,27 @@ function MuestreoPage() {
           if (error) throw error;
         }
         if (mermaTotal > 0) {
-          const { error } = await supabase.rpc("registrar_movimiento" as any, {
-            p_tipo: "MERMA",
+          // Merma → lote espejo "M…" en almacén TRANSITO, sección M, carril M
+          const { error } = await supabase.rpc("registrar_merma_muestreo" as any, {
             p_lote_id: loteId,
             p_ubic_origen: ubicacionId,
             p_total_latas: mermaTotal,
             p_empaque: emp,
             p_fecha: fecha,
-            p_motivo: `MUESTREO · ${actividad}`,
-            p_observaciones: observacion || null,
+            p_motivo: `MERMA MUESTREO · ${actividad}`,
+            p_observacion: observacion || null,
           } as any);
           if (error) throw error;
+        }
+        if (estadoLote) {
+          const origen: any = loteById.get(loteId);
+          if (origen && origen.estado !== estadoLote) {
+            const { error } = await supabase
+              .from("lotes")
+              .update({ estado: estadoLote })
+              .eq("id", loteId);
+            if (error) throw error;
+          }
         }
       }
 
@@ -303,6 +336,8 @@ function MuestreoPage() {
         empaque: emp,
         total_latas: total,
         actividad,
+        estado_lote: estadoLote || null,
+
         nuevo_lote_id: nuevoLoteId || null,
         merma_cajas: Number.parseInt(mermaCajas || "0", 10) || 0,
         merma_latas: Number.parseInt(mermaLatas || "0", 10) || 0,
@@ -402,6 +437,8 @@ function MuestreoPage() {
         "CANTIDAD (LATAS)",
         "CAJAS",
         "ACTIVIDAD",
+        "ESTADO LOTE",
+
         "NUEVO LOTE",
         "MERMA CAJAS",
         "MERMA LATAS",
@@ -417,6 +454,8 @@ function MuestreoPage() {
         Number(r.total_latas ?? 0),
         Math.floor(Number(r.total_latas ?? 0) / Math.max(1, r.empaque || 48)),
         r.actividad,
+        r.estado_lote ?? "",
+
         r.nuevoCodigo,
         Number(r.merma_cajas ?? 0),
         Number(r.merma_latas ?? 0),
@@ -476,7 +515,10 @@ function MuestreoPage() {
                   onValueChange={(v) => {
                     setLoteId(v);
                     setUbicacionId("");
+                    const l: any = loteById.get(v);
+                    setEstadoLote(l?.estado ?? "");
                   }}
+
                   options={loteOptions}
                   placeholder="Buscar lote…"
                   searchPlaceholder="Código, producto, estado…"
@@ -500,9 +542,27 @@ function MuestreoPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ACTIVIDADES.map((a) => (
+                    {actividadOptions.map((a) => (
                       <SelectItem key={a} value={a}>
                         {a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Catálogo editable en Gestión → Catálogos → Actividad
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Estado del lote</Label>
+                <Select value={estadoLote} onValueChange={setEstadoLote}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Sin cambio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {estadoOptions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -521,6 +581,7 @@ function MuestreoPage() {
                   allowClear
                 />
               </div>
+
             </div>
 
             <div className="space-y-1.5">
@@ -591,11 +652,18 @@ function MuestreoPage() {
               </label>
             </div>
             {aplicarInventario && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                Se ejecutará el cambio de lote (si indicas nuevo lote) y la merma como movimiento real
-                de almacén.
-              </p>
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                <p>Se ejecutará el cambio de lote (si indicas nuevo lote) y el estado del lote.</p>
+                {mermaTotal > 0 && mermaLoteCodigo && (
+                  <p>
+                    Merma de <strong>{formatNumber(mermaTotal, 0)} latas</strong> → almacén{" "}
+                    <strong>TRANSITO</strong> · sección <strong>M</strong> · carril{" "}
+                    <strong>M</strong>, como lote <strong>{mermaLoteCodigo}</strong>.
+                  </p>
+                )}
+              </div>
             )}
+
 
             <Textarea
               value={observacion}
@@ -658,7 +726,13 @@ function MuestreoPage() {
                     <div className="text-xs text-sky-500 truncate">→ {r.nuevoCodigo}</div>
                   )}
                 </div>
-                <Badge variant="outline">{r.actividad}</Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant="outline">{r.actividad}</Badge>
+                  {r.estado_lote && (
+                    <span className="text-[10px] text-muted-foreground">{r.estado_lote}</span>
+                  )}
+                </div>
+
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <Mini label="Latas" value={formatNumber(r.total_latas, 0)} />
@@ -717,6 +791,10 @@ function MuestreoPage() {
                   </td>
                   <td className="py-2 pr-3">
                     <Badge variant="outline">{r.actividad}</Badge>
+                    {r.estado_lote && (
+                      <div className="mt-1 text-[11px] text-muted-foreground">{r.estado_lote}</div>
+                    )}
+
                     {r.aplicado && (
                       <Badge variant="secondary" className="ml-1 text-[10px]">
                         aplicado
