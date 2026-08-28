@@ -500,9 +500,27 @@ function MuestreoPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ACTIVIDADES.map((a) => (
+                    {actividadOptions.map((a) => (
                       <SelectItem key={a} value={a}>
                         {a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Catálogo editable en Gestión → Catálogos → Actividad
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Estado del lote</Label>
+                <Select value={estadoLote} onValueChange={setEstadoLote}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Sin cambio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {estadoOptions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -521,6 +539,7 @@ function MuestreoPage() {
                   allowClear
                 />
               </div>
+
             </div>
 
             <div className="space-y-1.5">
