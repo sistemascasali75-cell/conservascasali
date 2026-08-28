@@ -37,6 +37,7 @@ function Catalogos() {
           <TabsTrigger value="ubicaciones">Ubicaciones</TabsTrigger>
           <TabsTrigger value="cp">Clientes / Proveedores</TabsTrigger>
           <TabsTrigger value="estados">Estados</TabsTrigger>
+          <TabsTrigger value="actividad">Actividad</TabsTrigger>
           <TabsTrigger value="mercados">Mercados</TabsTrigger>
         </TabsList>
         <TabsContent value="productos"><ProductosTab /></TabsContent>
@@ -44,7 +45,9 @@ function Catalogos() {
         <TabsContent value="ubicaciones"><UbicacionesTab /></TabsContent>
         <TabsContent value="cp"><CPTab /></TabsContent>
         <TabsContent value="estados"><EstadosTab /></TabsContent>
+        <TabsContent value="actividad"><ActividadTab /></TabsContent>
         <TabsContent value="mercados"><MercadosTab /></TabsContent>
+
       </Tabs>
     </div>
   );
