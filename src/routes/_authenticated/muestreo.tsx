@@ -644,11 +644,18 @@ function MuestreoPage() {
               </label>
             </div>
             {aplicarInventario && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                Se ejecutará el cambio de lote (si indicas nuevo lote) y la merma como movimiento real
-                de almacén.
-              </p>
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                <p>Se ejecutará el cambio de lote (si indicas nuevo lote) y el estado del lote.</p>
+                {mermaTotal > 0 && mermaLoteCodigo && (
+                  <p>
+                    Merma de <strong>{formatNumber(mermaTotal, 0)} latas</strong> → almacén{" "}
+                    <strong>TRANSITO</strong> · sección <strong>M</strong> · carril{" "}
+                    <strong>M</strong>, como lote <strong>{mermaLoteCodigo}</strong>.
+                  </p>
+                )}
+              </div>
             )}
+
 
             <Textarea
               value={observacion}
