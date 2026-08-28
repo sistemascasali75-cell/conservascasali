@@ -726,7 +726,13 @@ function MuestreoPage() {
                     <div className="text-xs text-sky-500 truncate">→ {r.nuevoCodigo}</div>
                   )}
                 </div>
-                <Badge variant="outline">{r.actividad}</Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant="outline">{r.actividad}</Badge>
+                  {r.estado_lote && (
+                    <span className="text-[10px] text-muted-foreground">{r.estado_lote}</span>
+                  )}
+                </div>
+
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <Mini label="Latas" value={formatNumber(r.total_latas, 0)} />
