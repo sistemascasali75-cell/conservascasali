@@ -293,17 +293,27 @@ function MuestreoPage() {
           if (error) throw error;
         }
         if (mermaTotal > 0) {
-          const { error } = await supabase.rpc("registrar_movimiento" as any, {
-            p_tipo: "MERMA",
+          // Merma → lote espejo "M…" en almacén TRANSITO, sección M, carril M
+          const { error } = await supabase.rpc("registrar_merma_muestreo" as any, {
             p_lote_id: loteId,
             p_ubic_origen: ubicacionId,
             p_total_latas: mermaTotal,
             p_empaque: emp,
             p_fecha: fecha,
-            p_motivo: `MUESTREO · ${actividad}`,
-            p_observaciones: observacion || null,
+            p_motivo: `MERMA MUESTREO · ${actividad}`,
+            p_observacion: observacion || null,
           } as any);
           if (error) throw error;
+        }
+        if (estadoLote) {
+          const origen: any = loteById.get(loteId);
+          if (origen && origen.estado !== estadoLote) {
+            const { error } = await supabase
+              .from("lotes")
+              .update({ estado: estadoLote })
+              .eq("id", loteId);
+            if (error) throw error;
+          }
         }
       }
 
@@ -316,6 +326,8 @@ function MuestreoPage() {
         empaque: emp,
         total_latas: total,
         actividad,
+        estado_lote: estadoLote || null,
+
         nuevo_lote_id: nuevoLoteId || null,
         merma_cajas: Number.parseInt(mermaCajas || "0", 10) || 0,
         merma_latas: Number.parseInt(mermaLatas || "0", 10) || 0,
