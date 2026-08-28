@@ -185,7 +185,15 @@ function MuestreoPage() {
     (Number.parseInt(mermaCajas || "0", 10) || 0) * emp +
     (Number.parseInt(mermaLatas || "0", 10) || 0);
 
+  // Código previsto del lote de merma: mismo código con la 1ª letra cambiada por "M"
+  const mermaLoteCodigo = useMemo(() => {
+    const l: any = loteId ? loteById.get(loteId) : null;
+    if (!l?.codigo_lote) return "";
+    return "M" + String(l.codigo_lote).slice(1);
+  }, [loteId, loteById]);
+
   const actividadOptions = useMemo<string[]>(() => {
+
     const list = (cat?.actividades ?? [])
       .filter((a: any) => a.activo !== false)
       .map((a: any) => String(a.nombre));
