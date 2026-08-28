@@ -785,6 +785,10 @@ function MuestreoPage() {
                   </td>
                   <td className="py-2 pr-3">
                     <Badge variant="outline">{r.actividad}</Badge>
+                    {r.estado_lote && (
+                      <div className="mt-1 text-[11px] text-muted-foreground">{r.estado_lote}</div>
+                    )}
+
                     {r.aplicado && (
                       <Badge variant="secondary" className="ml-1 text-[10px]">
                         aplicado
