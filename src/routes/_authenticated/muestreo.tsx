@@ -185,7 +185,20 @@ function MuestreoPage() {
     (Number.parseInt(mermaCajas || "0", 10) || 0) * emp +
     (Number.parseInt(mermaLatas || "0", 10) || 0);
 
+  const actividadOptions = useMemo<string[]>(() => {
+    const list = (cat?.actividades ?? [])
+      .filter((a: any) => a.activo !== false)
+      .map((a: any) => String(a.nombre));
+    return list.length ? list : ACTIVIDADES_FALLBACK;
+  }, [cat]);
+
+  const estadoOptions = useMemo<string[]>(() => {
+    const list = (cat?.estados ?? []).map((s: any) => String(s.nombre));
+    return list.length ? list : ["DISPONIBLE", "INMOVILIZADO", "POR_CERTIFICAR", "MERMA"];
+  }, [cat]);
+
   const loteOptions = useMemo<SearchSelectOption[]>(
+
     () =>
       (cat?.lotes ?? []).map((l: any) => {
         const prod: any = prodById.get(l.producto_id);
