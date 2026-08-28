@@ -429,6 +429,8 @@ function MuestreoPage() {
         "CANTIDAD (LATAS)",
         "CAJAS",
         "ACTIVIDAD",
+        "ESTADO LOTE",
+
         "NUEVO LOTE",
         "MERMA CAJAS",
         "MERMA LATAS",
