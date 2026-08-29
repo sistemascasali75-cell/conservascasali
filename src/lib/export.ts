@@ -69,10 +69,11 @@ export async function exportPDF(opts: {
   doc.text(opts.title, 14, 14);
   let cursorY = 20;
   if (opts.subtitle) {
-    doc.setFontSize(10); doc.setTextColor(120);
-    doc.text(opts.subtitle, 14, cursorY);
+    doc.setFontSize(9); doc.setTextColor(120);
+    const lines = doc.splitTextToSize(opts.subtitle, pageW - 28) as string[];
+    doc.text(lines, 14, cursorY);
     doc.setTextColor(0);
-    cursorY += 6;
+    cursorY += lines.length * 4.5 + 2;
   }
 
   // Banner "INVENTARIO TOTAL · LATAS"

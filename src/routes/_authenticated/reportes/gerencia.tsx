@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatNumber, formatDate, daysUntil } from "@/lib/format";
 import { exportXLSX, exportPDF } from "@/lib/export";
-import { Briefcase, FileSpreadsheet, FileDown, Boxes, Package, Coins, Layers, Filter, X } from "lucide-react";
+import { Briefcase, FileSpreadsheet, FileDown, Boxes, Package, Coins, Layers, Filter, X, Printer } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reportes/gerencia")({
   component: ReporteGerencia,
@@ -297,6 +297,46 @@ function ReporteGerencia() {
     inventario: inventarioBanner,
   });
 
+  // Descripción legible de los filtros activos (para el PDF "pantalla")
+  const filtrosDesc = () => {
+    const partes: string[] = [];
+    partes.push(`Tipos de movimiento: ${TIPOS_MOV.filter((t) => fTipos.has(t)).join(", ") || "ninguno"}`);
+    if (search.trim()) partes.push(`Búsqueda: "${search.trim()}"`);
+    if (fProducto !== ALL) {
+      const p = (data?.productos ?? []).find((x: any) => x.id === fProducto) as any;
+      partes.push(`Producto: ${p?.descripcion ?? p?.codigo_base ?? fProducto}`);
+    }
+    if (fEspecie !== ALL) partes.push(`Especie: ${fEspecie}`);
+    if (fEnvase !== ALL) partes.push(`Envase: ${fEnvase}`);
+    if (fAlmacen !== ALL) partes.push(`Almacén: ${(data?.almacenes ?? []).find((a: any) => a.id === fAlmacen)?.nombre ?? fAlmacen}`);
+    if (fEstado !== ALL) partes.push(`Estado: ${fEstado}`);
+    if (fMercado !== ALL) partes.push(`Mercado: ${fMercado}`);
+    if (fTamano !== ALL) partes.push(`Tamaño: ${fTamano}`);
+    if (fEtiqueta !== "all") partes.push(`Etiqueta: ${fEtiqueta === "si" ? "con etiqueta" : "sin etiqueta"}`);
+    if (fVenc !== "all") {
+      const lbl: Record<string, string> = { vencido: "vencidos", "7": "≤ 7 días", "30": "≤ 30 días", "90": "≤ 90 días", vigente: "> 90 días" };
+      partes.push(`Vencimiento: ${lbl[fVenc]}`);
+    }
+    partes.push(`Vista: ${vista} · ${filtradas.length} líneas · ${grouped.length} grupos`);
+    return partes.join("  |  ");
+  };
+
+  // PDF que imprime EXACTAMENTE lo mostrado en pantalla (tabla agrupada de la pestaña activa)
+  const exportPdfPantalla = () => exportPDF({
+    title: `Reporte Gerencial · Vista por ${vista.charAt(0).toUpperCase() + vista.slice(1)}`,
+    subtitle: `Generado ${new Date().toLocaleString("es-PE")}\n${filtrosDesc()}`,
+    headers: ["Agrupado por", "Detalle", "Lotes", "Ubic.", "Cajas", "Latas sueltas", "Inventario (latas)", "Valor (S/.)"],
+    rows: grouped.map((g) => [g.label || "—", g.sub, g.lotes.size, g.ubicaciones.size, g.cajas, g.latas, g.totalLatas, `S/. ${g.valor.toFixed(2)}`]),
+    filename: `reporte-gerencia-pantalla-${vista}-${new Date().toISOString().slice(0, 10)}.pdf`,
+    inventario: inventarioBanner,
+    summary: [
+      { label: "Lotes", value: totals.lotesUnicos },
+      { label: "Cajas", value: formatNumber(totals.totCajas, 0) },
+      { label: "Latas sueltas", value: formatNumber(totals.totLatas, 0) },
+      { label: "Valor total", value: `S/. ${formatNumber(totals.totValor)}` },
+    ],
+  });
+
   const exportPdfResumen = () => exportPDF({
     title: `Reporte Gerencial · Resumen por ${vista}`,
     subtitle: `Generado ${new Date().toLocaleString("es-PE")}`,
@@ -340,6 +380,7 @@ function ReporteGerencia() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={exportPdfPantalla}><Printer className="size-3.5 mr-1" />PDF Pantalla (filtros)</Button>
             <Button variant="secondary" size="sm" onClick={exportPdfResumen}><FileDown className="size-3.5 mr-1" />PDF Resumen</Button>
             <Button variant="secondary" size="sm" onClick={exportPdfInventario}><FileDown className="size-3.5 mr-1" />PDF Inventario Completo</Button>
           </div>
@@ -364,6 +405,7 @@ function ReporteGerencia() {
             <Button variant="ghost" size="sm" onClick={clearFilters}><X className="size-3.5 mr-1" />Limpiar</Button>
             <Button variant="outline" size="sm" onClick={exportExcel}><FileSpreadsheet className="size-3.5 mr-1" />Excel Resumen</Button>
             <Button variant="outline" size="sm" onClick={exportDetalle}><FileSpreadsheet className="size-3.5 mr-1" />Excel Detalle</Button>
+            <Button size="sm" onClick={exportPdfPantalla}><Printer className="size-3.5 mr-1" />PDF Pantalla (filtros)</Button>
             <Button variant="outline" size="sm" onClick={exportPdfResumen}><FileDown className="size-3.5 mr-1" />PDF Resumen</Button>
             <Button variant="outline" size="sm" onClick={exportPdfInventario}><FileDown className="size-3.5 mr-1" />PDF Inventario</Button>
           </div>
