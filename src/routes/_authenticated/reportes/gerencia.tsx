@@ -405,6 +405,7 @@ function ReporteGerencia() {
             <Button variant="ghost" size="sm" onClick={clearFilters}><X className="size-3.5 mr-1" />Limpiar</Button>
             <Button variant="outline" size="sm" onClick={exportExcel}><FileSpreadsheet className="size-3.5 mr-1" />Excel Resumen</Button>
             <Button variant="outline" size="sm" onClick={exportDetalle}><FileSpreadsheet className="size-3.5 mr-1" />Excel Detalle</Button>
+            <Button size="sm" onClick={exportPdfPantalla}><Printer className="size-3.5 mr-1" />PDF Pantalla (filtros)</Button>
             <Button variant="outline" size="sm" onClick={exportPdfResumen}><FileDown className="size-3.5 mr-1" />PDF Resumen</Button>
             <Button variant="outline" size="sm" onClick={exportPdfInventario}><FileDown className="size-3.5 mr-1" />PDF Inventario</Button>
           </div>
