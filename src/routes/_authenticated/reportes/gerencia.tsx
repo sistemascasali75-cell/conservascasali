@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatNumber, formatDate, daysUntil } from "@/lib/format";
 import { exportXLSX, exportPDF } from "@/lib/export";
-import { Briefcase, FileSpreadsheet, FileDown, Boxes, Package, Coins, Layers, Filter, X } from "lucide-react";
+import { Briefcase, FileSpreadsheet, FileDown, Boxes, Package, Coins, Layers, Filter, X, Printer } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reportes/gerencia")({
   component: ReporteGerencia,
