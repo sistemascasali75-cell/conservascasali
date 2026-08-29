@@ -380,6 +380,7 @@ function ReporteGerencia() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={exportPdfPantalla}><Printer className="size-3.5 mr-1" />PDF Pantalla (filtros)</Button>
             <Button variant="secondary" size="sm" onClick={exportPdfResumen}><FileDown className="size-3.5 mr-1" />PDF Resumen</Button>
             <Button variant="secondary" size="sm" onClick={exportPdfInventario}><FileDown className="size-3.5 mr-1" />PDF Inventario Completo</Button>
           </div>
