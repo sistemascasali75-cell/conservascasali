@@ -181,6 +181,8 @@ function MovimientosAdmin() {
       if (latas !== null && (!Number.isInteger(latas) || latas < 0)) throw new Error("Latas debe ser un entero ≥ 0");
       const piso = m.piso === "" || m.piso == null ? null : Number(m.piso);
       if (piso !== null && (!Number.isInteger(piso) || piso < 1)) throw new Error("Piso debe ser 1 o 2");
+      const empaque = m.empaque === "" || m.empaque == null ? null : Number(m.empaque);
+      if (empaque !== null && (!Number.isInteger(empaque) || empaque < 1)) throw new Error("Empaque debe ser un entero ≥ 1 (ej. 24 o 48)");
       const { error } = await supabase.rpc("admin_editar_movimiento" as any, {
         p_mov: m.id,
         p_tipo: m.tipo,
@@ -197,8 +199,13 @@ function MovimientosAdmin() {
         p_motivo: m.motivo || null,
         p_observaciones: m.observaciones || null,
         p_nro_warrant: m.nro_warrant || null,
+        p_mercado_id: m.mercado_id || null,
         p_tiene_etiqueta: !!m.tiene_etiqueta,
         p_tercero: m.tercero || null,
+        p_empaque: empaque,
+        p_donacion: !!m.donacion,
+        p_autorizado: m.autorizado || null,
+        p_tamano: m.tamano || null,
       } as any);
       if (error) throw error;
     },
@@ -278,7 +285,7 @@ function MovimientosAdmin() {
               {(r._origen || r._destino) && <div className="text-xs">{r._origen && <>← {r._origen} </>}{r._destino && <>→ {r._destino}</>}</div>}
               <div className="flex justify-end gap-1 pt-1 border-t">
                 <Button size="sm" variant="ghost" onClick={() => setView(r)}><Eye className="size-4" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => setEdit({ ...r, cantidad_cajas: String(r.cantidad_cajas), latas: r.latas == null ? "" : String(r.latas), piso: r.piso == null ? null : Number(r.piso) })}><Pencil className="size-4" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => setEdit({ ...r, cantidad_cajas: String(r.cantidad_cajas), latas: r.latas == null ? "" : String(r.latas), piso: r.piso == null ? null : Number(r.piso), empaque: r.empaque == null ? "" : String(r.empaque) })}><Pencil className="size-4" /></Button>
                 <Button size="sm" variant="ghost" onClick={() => setDel(r)} className="text-destructive"><Trash2 className="size-4" /></Button>
               </div>
             </Card>
@@ -331,7 +338,7 @@ function MovimientosAdmin() {
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">
                       <Button size="icon" variant="ghost" onClick={() => setView(r)}><Eye className="size-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => setEdit({ ...r, cantidad_cajas: String(r.cantidad_cajas), latas: r.latas == null ? "" : String(r.latas), piso: r.piso == null ? null : Number(r.piso) })}><Pencil className="size-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setEdit({ ...r, cantidad_cajas: String(r.cantidad_cajas), latas: r.latas == null ? "" : String(r.latas), piso: r.piso == null ? null : Number(r.piso), empaque: r.empaque == null ? "" : String(r.empaque) })}><Pencil className="size-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => setDel(r)} className="text-destructive hover:text-destructive"><Trash2 className="size-4" /></Button>
                     </td>
                   </tr>
@@ -368,6 +375,8 @@ function MovimientosAdmin() {
               <Field label="Fecha" v={view.fecha} />
               <Field label="Cajas" v={formatNumber(Number(view.cantidad_cajas), 3)} />
               <Field label="Latas" v={view.latas ?? "—"} />
+              <Field label="Empaque" v={view.empaque ?? "—"} />
+              <Field label="Tamaño" v={view.tamano ?? "—"} />
               <Field label="Piso" v={view.piso ? `Piso ${view.piso}` : "—"} />
               <Field label="Etiqueta" v={view.tiene_etiqueta ? "Sí" : "No"} />
               <Field label="Producto" v={view._prod} full />
@@ -481,6 +490,17 @@ function MovimientosAdmin() {
                   <Label>Latas</Label>
                   <Input type="number" step="1" min="0" value={edit.latas ?? ""}
                     onChange={(e) => setEdit({ ...edit, latas: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Empaque</Label>
+                  <Input type="number" step="1" min="1" value={edit.empaque ?? ""}
+                    onChange={(e) => setEdit({ ...edit, empaque: e.target.value })} />
+                  <p className="text-[11px] text-muted-foreground mt-1">Latas por caja (24, 48…)</p>
+                </div>
+                <div>
+                  <Label>Tamaño</Label>
+                  <Input value={edit.tamano ?? ""} placeholder="109, 108, 1 LB TALL…"
+                    onChange={(e) => setEdit({ ...edit, tamano: e.target.value })} />
                 </div>
                 <div>
                   <Label>Piso</Label>
