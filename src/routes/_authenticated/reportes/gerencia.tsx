@@ -335,7 +335,15 @@ function ReporteGerencia() {
       { label: "Latas sueltas", value: formatNumber(totals.totLatas, 0) },
       { label: "Valor total", value: `S/. ${formatNumber(totals.totValor)}` },
     ],
+    sections: [
+      {
+        title: `Detalle por lote × ubicación · ${filtradas.length} registros filtrados`,
+        headers: detalleHeaders,
+        rows: detalleRows() as (string | number)[][],
+      },
+    ],
   });
+
 
   const exportPdfResumen = () => exportPDF({
     title: `Reporte Gerencial · Resumen por ${vista}`,
