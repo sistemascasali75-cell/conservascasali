@@ -56,9 +56,12 @@ export async function exportPDF(opts: {
   rows: (string | number)[][];
   filename: string;
   summary?: { label: string; value: string | number }[];
+  /** Secciones adicionales (ej. detalle de todos los registros filtrados). */
+  sections?: { title: string; headers: string[]; rows: (string | number | null | undefined)[][] }[];
   /** Cuando esté presente, sobrescribe el cálculo automático de inventario. */
   inventario?: { cajas: number; latas: number; totalLatas: number };
 }) {
+
   const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),
