@@ -126,8 +126,26 @@ export async function exportPDF(opts: {
     styles: { fontSize: 8, cellPadding: 2 },
     headStyles: { fillColor: [30, 58, 95] },
   });
+
+  for (const sec of opts.sections ?? []) {
+    const prevY = (doc as any).lastAutoTable?.finalY ?? cursorY;
+    doc.addPage("a4", "landscape");
+    doc.setFontSize(11); doc.setTextColor(30, 58, 95);
+    doc.text(sec.title, 14, 14);
+    doc.setTextColor(0);
+    void prevY;
+    autoTable(doc, {
+      head: [sec.headers],
+      body: sec.rows.map((r) => r.map((c) => (c === null || c === undefined ? "" : String(c)))),
+      startY: 18,
+      styles: { fontSize: 6.5, cellPadding: 1.5, overflow: "linebreak" },
+      headStyles: { fillColor: [30, 58, 95], fontSize: 6.5 },
+    });
+  }
+
   doc.save(opts.filename);
 }
+
 
 export async function exportXLSX(opts: {
   sheetName: string;
