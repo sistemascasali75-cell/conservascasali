@@ -41,6 +41,7 @@ import {
   Menu,
   X,
   Ticket,
+  Scale,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -76,6 +77,7 @@ const items: Item[] = [
   { to: "/etiquetado", label: "Etiquetado", icon: Tag, section: "Operaciones", operador: true },
   { to: "/certificacion", label: "Certificación", icon: ShieldCheck, section: "Operaciones", operador: true },
   { to: "/mermas", label: "Mermas y Ajustes", icon: AlertTriangle, section: "Operaciones", roles: ["ADMIN", "OPERADOR"], operador: true },
+  { to: "/ajustes", label: "Ajustes", icon: Scale, section: "Operaciones", roles: ["ADMIN", "OPERADOR"], operador: true },
   { to: "/inventario-fisico", label: "Toma de inventario", icon: ClipboardList, section: "Operaciones", operador: true },
   { to: "/control-vales", label: "Control de vales", icon: Ticket, section: "Operaciones", operador: true },
 
