@@ -197,6 +197,102 @@ export type Database = {
         }
         Relationships: []
       }
+      codificado_registros: {
+        Row: {
+          cajas: number
+          codigo_lote: string
+          created_at: string
+          descripcion: string | null
+          fecha: string
+          id: string
+          importe: number
+          lote_id: string | null
+          maquina: string
+          observacion: string | null
+          tarifa: number
+          turno: string
+          updated_at: string
+          usuario_id: string | null
+          usuario_nombre: string | null
+        }
+        Insert: {
+          cajas?: number
+          codigo_lote: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          importe?: number
+          lote_id?: string | null
+          maquina: string
+          observacion?: string | null
+          tarifa?: number
+          turno?: string
+          updated_at?: string
+          usuario_id?: string | null
+          usuario_nombre?: string | null
+        }
+        Update: {
+          cajas?: number
+          codigo_lote?: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          importe?: number
+          lote_id?: string | null
+          maquina?: string
+          observacion?: string | null
+          tarifa?: number
+          turno?: string
+          updated_at?: string
+          usuario_id?: string | null
+          usuario_nombre?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "codificado_registros_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "codificado_registros_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_lote"
+            referencedColumns: ["lote_id"]
+          },
+        ]
+      }
+      codificado_tarifas: {
+        Row: {
+          created_at: string
+          id: string
+          maquina: string
+          tarifa: number
+          turno: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          maquina: string
+          tarifa?: number
+          turno?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          maquina?: string
+          tarifa?: number
+          turno?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       estados: {
         Row: {
           created_at: string
