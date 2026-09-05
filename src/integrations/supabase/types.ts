@@ -197,6 +197,102 @@ export type Database = {
         }
         Relationships: []
       }
+      codificado_registros: {
+        Row: {
+          cajas: number
+          codigo_lote: string
+          created_at: string
+          descripcion: string | null
+          fecha: string
+          id: string
+          importe: number
+          lote_id: string | null
+          maquina: string
+          observacion: string | null
+          tarifa: number
+          turno: string
+          updated_at: string
+          usuario_id: string | null
+          usuario_nombre: string | null
+        }
+        Insert: {
+          cajas?: number
+          codigo_lote: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          importe?: number
+          lote_id?: string | null
+          maquina: string
+          observacion?: string | null
+          tarifa?: number
+          turno?: string
+          updated_at?: string
+          usuario_id?: string | null
+          usuario_nombre?: string | null
+        }
+        Update: {
+          cajas?: number
+          codigo_lote?: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          importe?: number
+          lote_id?: string | null
+          maquina?: string
+          observacion?: string | null
+          tarifa?: number
+          turno?: string
+          updated_at?: string
+          usuario_id?: string | null
+          usuario_nombre?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "codificado_registros_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "codificado_registros_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_lote"
+            referencedColumns: ["lote_id"]
+          },
+        ]
+      }
+      codificado_tarifas: {
+        Row: {
+          created_at: string
+          id: string
+          maquina: string
+          tarifa: number
+          turno: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          maquina: string
+          tarifa?: number
+          turno?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          maquina?: string
+          tarifa?: number
+          turno?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       estados: {
         Row: {
           created_at: string
@@ -2601,12 +2697,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2630,11 +2726,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2655,11 +2751,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2680,11 +2776,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2697,11 +2793,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
