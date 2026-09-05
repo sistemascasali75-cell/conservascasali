@@ -31,6 +31,7 @@ import { Route as AuthenticatedEntradaRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedDescargasRouteImport } from './routes/_authenticated/descargas'
 import { Route as AuthenticatedControlValesRouteImport } from './routes/_authenticated/control-vales'
 import { Route as AuthenticatedControlTotalRouteImport } from './routes/_authenticated/control-total'
+import { Route as AuthenticatedCodificadoRouteImport } from './routes/_authenticated/codificado'
 import { Route as AuthenticatedCertificacionRouteImport } from './routes/_authenticated/certificacion'
 import { Route as AuthenticatedCatalogosRouteImport } from './routes/_authenticated/catalogos'
 import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
@@ -173,6 +174,11 @@ const AuthenticatedControlTotalRoute =
     path: '/control-total',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCodificadoRoute = AuthenticatedCodificadoRouteImport.update({
+  id: '/codificado',
+  path: '/codificado',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCertificacionRoute =
   AuthenticatedCertificacionRouteImport.update({
     id: '/certificacion',
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/catalogos': typeof AuthenticatedCatalogosRoute
   '/certificacion': typeof AuthenticatedCertificacionRoute
+  '/codificado': typeof AuthenticatedCodificadoRoute
   '/control-total': typeof AuthenticatedControlTotalRoute
   '/control-vales': typeof AuthenticatedControlValesRoute
   '/descargas': typeof AuthenticatedDescargasRoute
@@ -398,6 +405,7 @@ export interface FileRoutesByTo {
   '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/catalogos': typeof AuthenticatedCatalogosRoute
   '/certificacion': typeof AuthenticatedCertificacionRoute
+  '/codificado': typeof AuthenticatedCodificadoRoute
   '/control-total': typeof AuthenticatedControlTotalRoute
   '/control-vales': typeof AuthenticatedControlValesRoute
   '/descargas': typeof AuthenticatedDescargasRoute
@@ -451,6 +459,7 @@ export interface FileRoutesById {
   '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
   '/_authenticated/catalogos': typeof AuthenticatedCatalogosRoute
   '/_authenticated/certificacion': typeof AuthenticatedCertificacionRoute
+  '/_authenticated/codificado': typeof AuthenticatedCodificadoRoute
   '/_authenticated/control-total': typeof AuthenticatedControlTotalRoute
   '/_authenticated/control-vales': typeof AuthenticatedControlValesRoute
   '/_authenticated/descargas': typeof AuthenticatedDescargasRoute
@@ -505,6 +514,7 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/catalogos'
     | '/certificacion'
+    | '/codificado'
     | '/control-total'
     | '/control-vales'
     | '/descargas'
@@ -555,6 +565,7 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/catalogos'
     | '/certificacion'
+    | '/codificado'
     | '/control-total'
     | '/control-vales'
     | '/descargas'
@@ -607,6 +618,7 @@ export interface FileRouteTypes {
     | '/_authenticated/auditoria'
     | '/_authenticated/catalogos'
     | '/_authenticated/certificacion'
+    | '/_authenticated/codificado'
     | '/_authenticated/control-total'
     | '/_authenticated/control-vales'
     | '/_authenticated/descargas'
@@ -815,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedControlTotalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/codificado': {
+      id: '/_authenticated/codificado'
+      path: '/codificado'
+      fullPath: '/codificado'
+      preLoaderRoute: typeof AuthenticatedCodificadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/certificacion': {
       id: '/_authenticated/certificacion'
       path: '/certificacion'
@@ -1020,6 +1039,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
   AuthenticatedCatalogosRoute: typeof AuthenticatedCatalogosRoute
   AuthenticatedCertificacionRoute: typeof AuthenticatedCertificacionRoute
+  AuthenticatedCodificadoRoute: typeof AuthenticatedCodificadoRoute
   AuthenticatedControlTotalRoute: typeof AuthenticatedControlTotalRoute
   AuthenticatedControlValesRoute: typeof AuthenticatedControlValesRoute
   AuthenticatedDescargasRoute: typeof AuthenticatedDescargasRoute
@@ -1066,6 +1086,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
   AuthenticatedCatalogosRoute: AuthenticatedCatalogosRoute,
   AuthenticatedCertificacionRoute: AuthenticatedCertificacionRoute,
+  AuthenticatedCodificadoRoute: AuthenticatedCodificadoRoute,
   AuthenticatedControlTotalRoute: AuthenticatedControlTotalRoute,
   AuthenticatedControlValesRoute: AuthenticatedControlValesRoute,
   AuthenticatedDescargasRoute: AuthenticatedDescargasRoute,
