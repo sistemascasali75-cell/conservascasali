@@ -295,6 +295,16 @@ function CodificadoPage() {
   const cajasNum = Number(cajas) || 0;
   const pagoPreview = Math.round(cajasNum * tarifaActual * 100) / 100;
 
+  /* control del lote seleccionado */
+  const ctrlSel = useMemo(
+    () => (loteSel ? controlLotes.find((c) => c.key === loteKey(loteSel.codigo_lote)) ?? null : null),
+    [loteSel, controlLotes],
+  );
+  const saldoSel = ctrlSel?.saldo ?? 0;
+  const excede = !!ctrlSel && ctrlSel.permitido > 0 && cajasNum > saldoSel;
+  const excesoCajas = excede ? cajasNum - saldoSel : 0;
+
+
   const duplicado = useMemo(() => {
     if (!loteSel) return false;
     const t = maquina === "MAQ-1" ? turno : "DIA";
