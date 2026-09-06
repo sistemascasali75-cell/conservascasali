@@ -30,7 +30,11 @@ import {
   Cog,
   ChevronLeft,
   ChevronRight,
+  ShieldCheck,
+  CheckCircle2,
+  Search,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/codificado")({
   component: CodificadoPage,
