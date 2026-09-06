@@ -628,17 +628,78 @@ function CodificadoPage() {
               <Input value={observacion} onChange={(e) => setObservacion(e.target.value)} placeholder="Opcional" />
             </div>
 
-            {/* Cálculo en vivo */}
-            <div className="rounded-xl border bg-[#0f2440]/[0.04] p-4 grid gap-4 sm:grid-cols-4">
-              <Metric label="Tarifa aplicada" value={soles(tarifaActual)} />
-              <Metric label="Cajas" value={formatNumber(cajasNum, 0)} />
-              <Metric label="Pago calculado" value={soles(pagoPreview)} accent />
-              <div className="flex items-end">
-                <Button onClick={guardar} disabled={saving} className="w-full h-11">
-                  <Save className="size-4 mr-2" /> Guardar
-                </Button>
+            {/* Control de calidad / inventario del lote */}
+            {loteSel && (
+              <div
+                className={cn(
+                  "rounded-xl border p-4",
+                  excede
+                    ? "border-destructive/60 bg-destructive/5"
+                    : ctrlSel && ctrlSel.permitido > 0
+                      ? "border-emerald-500/50 bg-emerald-500/5"
+                      : "border-amber-500/50 bg-amber-500/5",
+                )}
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold mb-3">
+                  <ShieldCheck className="size-4 text-[#0f2440]" />
+                  Control por lote · Calidad e Inventario
+                </div>
+                {ctrlSel && ctrlSel.permitido > 0 ? (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-4">
+                      <Metric label="Máx. permitido (calidad)" value={formatNumber(ctrlSel.permitido, 0)} />
+                      <Metric label="Entradas inventario" value={formatNumber(ctrlSel.entradas, 0)} />
+                      <Metric label="Ya codificado" value={formatNumber(ctrlSel.codificado, 0)} />
+                      <Metric
+                        label="Saldo por codificar"
+                        value={formatNumber(Math.max(saldoSel, 0), 0)}
+                        accent={!excede}
+                      />
+                    </div>
+                    <div className="mt-3 h-2.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full", excede ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400")}
+                        style={{
+                          width: `${Math.min(100, ((ctrlSel.codificado + cajasNum) / ctrlSel.permitido) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    {excede ? (
+                      <div className="mt-3 flex items-start gap-2 text-sm text-destructive font-medium">
+                        <AlertTriangle className="size-4 mt-0.5" />
+                        <span>
+                          Excede el máximo permitido en <b>{formatNumber(excesoCajas, 0)}</b> cajas. Saldo disponible:{" "}
+                          {formatNumber(Math.max(saldoSel, 0), 0)} cajas de {formatNumber(ctrlSel.permitido, 0)}.
+                        </span>
+                      </div>
+                    ) : saldoSel - cajasNum > 0 ? (
+                      <div className="mt-3 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="size-4 mt-0.5" />
+                        <span>
+                          Después de este registro faltarían <b>{formatNumber(saldoSel - cajasNum, 0)}</b> cajas por
+                          codificar en este lote.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="size-4 mt-0.5" />
+                        <span>Con este registro el lote queda completamente codificado.</span>
+                      </div>
+                    )}
+                    {ctrlSel.entradas > 0 && ctrlSel.permitido > ctrlSel.entradas && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Nota: el inventario registra {formatNumber(ctrlSel.entradas, 0)} cajas de entrada, menos que lo
+                        certificado en calidad ({formatNumber(ctrlSel.permitido, 0)}).
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Este lote no tiene cajas certificadas en la pestaña Calidad, no hay máximo permitido para validar.
+                  </p>
+                )}
               </div>
-            </div>
+            )}
 
             {duplicado && (
               <div className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
@@ -649,6 +710,7 @@ function CodificadoPage() {
                 </span>
               </div>
             )}
+
           </Card>
         </TabsContent>
 
