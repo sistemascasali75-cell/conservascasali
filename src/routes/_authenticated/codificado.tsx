@@ -30,7 +30,11 @@ import {
   Cog,
   ChevronLeft,
   ChevronRight,
+  ShieldCheck,
+  CheckCircle2,
+  Search,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/codificado")({
   component: CodificadoPage,
@@ -142,8 +146,121 @@ function CodificadoPage() {
       ),
   });
 
+  /* ---------- calidad (máximo permitido) + inventario (entradas) ---------- */
+  const calidadQ = useQuery({
+    queryKey: ["codificado-calidad"],
+    queryFn: async () =>
+      fetchAllRows<any>((from, to) =>
+        supabase
+          .from("calidad_codigos")
+          .select("id,item,producto,presentacion,lote_codigo,xcertif,codificado,certifica,fecha_certif")
+          .order("item", { ascending: true })
+          .range(from, to),
+      ),
+  });
+
+  const entradasQ = useQuery({
+    queryKey: ["codificado-entradas"],
+    queryFn: async () =>
+      fetchAllRows<any>((from, to) =>
+        supabase
+          .from("movimientos")
+          .select("lote_id,cantidad_cajas,tipo")
+          .eq("tipo", "ENTRADA")
+          .range(from, to),
+      ),
+  });
+
+  const stockQ = useQuery({
+    queryKey: ["codificado-stock"],
+    queryFn: async () =>
+      fetchAllRows<any>((from, to) =>
+        supabase.from("stock_lote_ubicacion").select("lote_id,cantidad_cajas").range(from, to),
+      ),
+  });
+
   const tarifaDe = (maquina: string, turno: string) =>
     Number(tarifasQ.data?.find((t) => t.maquina === maquina && t.turno === (maquina === "MAQ-1" ? turno : "DIA"))?.tarifa ?? 0);
+
+  /* clave normalizada: código base + FP (calidad usa guiones, lotes usa espacios) */
+  const loteKey = (codigo?: string | null) =>
+    (codigo ?? "").toUpperCase().split("FV")[0].replace(/[^A-Z0-9]/g, "");
+
+  const entradasPorLote = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of entradasQ.data ?? []) {
+      if (!e.lote_id) continue;
+      m.set(e.lote_id, (m.get(e.lote_id) ?? 0) + Number(e.cantidad_cajas || 0));
+    }
+    return m;
+  }, [entradasQ.data]);
+
+  const stockPorLote = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of stockQ.data ?? []) {
+      m.set(s.lote_id, (m.get(s.lote_id) ?? 0) + Number(s.cantidad_cajas || 0));
+    }
+    return m;
+  }, [stockQ.data]);
+
+  /* codificado acumulado por clave de lote */
+  const codificadoPorKey = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of registrosQ.data ?? []) {
+      const k = loteKey(r.codigo_lote);
+      m.set(k, (m.get(k) ?? 0) + Number(r.cajas || 0));
+    }
+    return m;
+  }, [registrosQ.data]);
+
+  /* máximo permitido por clave de lote (suma de xcertif de calidad) */
+  const permitidoPorKey = useMemo(() => {
+    const m = new Map<string, { permitido: number; producto: string; presentacion: string; certifica: string | null }>();
+    for (const c of calidadQ.data ?? []) {
+      const k = loteKey(c.lote_codigo);
+      if (!k) continue;
+      const cur = m.get(k) ?? { permitido: 0, producto: c.producto ?? "", presentacion: c.presentacion ?? "", certifica: c.certifica ?? null };
+      cur.permitido += Number(c.xcertif || 0);
+      m.set(k, cur);
+    }
+    return m;
+  }, [calidadQ.data]);
+
+  /* consolidado calidad × inventario × codificado */
+  const controlLotes = useMemo(() => {
+    const lotePorKey = new Map<string, any>();
+    for (const l of lotesQ.data ?? []) {
+      const k = loteKey(l.codigo_lote);
+      if (!lotePorKey.has(k)) lotePorKey.set(k, l);
+    }
+    const keys = new Set<string>([...permitidoPorKey.keys(), ...codificadoPorKey.keys()]);
+    return [...keys]
+      .map((k) => {
+        const cal = permitidoPorKey.get(k);
+        const l = lotePorKey.get(k);
+        const permitido = cal?.permitido ?? 0;
+        const entradas = l ? (entradasPorLote.get(l.id) ?? 0) : 0;
+        const stock = l ? (stockPorLote.get(l.id) ?? 0) : 0;
+        const codificado = codificadoPorKey.get(k) ?? 0;
+        const saldo = permitido - codificado;
+        return {
+          key: k,
+          codigo: (l?.codigo_lote as string) ?? k,
+          producto: (l?.productos?.descripcion as string) || cal?.producto || "—",
+          presentacion: cal?.presentacion ?? "",
+          fp: l?.fecha_produccion ?? null,
+          permitido,
+          entradas,
+          stock,
+          codificado,
+          saldo,
+          estado: permitido === 0 ? "SIN_CALIDAD" : saldo < 0 ? "EXCEDIDO" : saldo === 0 ? "COMPLETO" : "PENDIENTE",
+          enSistema: !!l,
+        };
+      })
+      .sort((a, b) => (b.fp ?? "").localeCompare(a.fp ?? "") || a.codigo.localeCompare(b.codigo));
+  }, [permitidoPorKey, codificadoPorKey, entradasPorLote, stockPorLote, lotesQ.data]);
+
 
   /* ---------- formulario ---------- */
   const [fecha, setFecha] = useState(hoy);
@@ -177,6 +294,16 @@ function CodificadoPage() {
   const tarifaActual = tarifaDe(maquina, turno);
   const cajasNum = Number(cajas) || 0;
   const pagoPreview = Math.round(cajasNum * tarifaActual * 100) / 100;
+
+  /* control del lote seleccionado */
+  const ctrlSel = useMemo(
+    () => (loteSel ? controlLotes.find((c) => c.key === loteKey(loteSel.codigo_lote)) ?? null : null),
+    [loteSel, controlLotes],
+  );
+  const saldoSel = ctrlSel?.saldo ?? 0;
+  const excede = !!ctrlSel && ctrlSel.permitido > 0 && cajasNum > saldoSel;
+  const excesoCajas = excede ? cajasNum - saldoSel : 0;
+
 
   const duplicado = useMemo(() => {
     if (!loteSel) return false;
@@ -501,17 +628,78 @@ function CodificadoPage() {
               <Input value={observacion} onChange={(e) => setObservacion(e.target.value)} placeholder="Opcional" />
             </div>
 
-            {/* Cálculo en vivo */}
-            <div className="rounded-xl border bg-[#0f2440]/[0.04] p-4 grid gap-4 sm:grid-cols-4">
-              <Metric label="Tarifa aplicada" value={soles(tarifaActual)} />
-              <Metric label="Cajas" value={formatNumber(cajasNum, 0)} />
-              <Metric label="Pago calculado" value={soles(pagoPreview)} accent />
-              <div className="flex items-end">
-                <Button onClick={guardar} disabled={saving} className="w-full h-11">
-                  <Save className="size-4 mr-2" /> Guardar
-                </Button>
+            {/* Control de calidad / inventario del lote */}
+            {loteSel && (
+              <div
+                className={cn(
+                  "rounded-xl border p-4",
+                  excede
+                    ? "border-destructive/60 bg-destructive/5"
+                    : ctrlSel && ctrlSel.permitido > 0
+                      ? "border-emerald-500/50 bg-emerald-500/5"
+                      : "border-amber-500/50 bg-amber-500/5",
+                )}
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold mb-3">
+                  <ShieldCheck className="size-4 text-[#0f2440]" />
+                  Control por lote · Calidad e Inventario
+                </div>
+                {ctrlSel && ctrlSel.permitido > 0 ? (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-4">
+                      <Metric label="Máx. permitido (calidad)" value={formatNumber(ctrlSel.permitido, 0)} />
+                      <Metric label="Entradas inventario" value={formatNumber(ctrlSel.entradas, 0)} />
+                      <Metric label="Ya codificado" value={formatNumber(ctrlSel.codificado, 0)} />
+                      <Metric
+                        label="Saldo por codificar"
+                        value={formatNumber(Math.max(saldoSel, 0), 0)}
+                        accent={!excede}
+                      />
+                    </div>
+                    <div className="mt-3 h-2.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full", excede ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400")}
+                        style={{
+                          width: `${Math.min(100, ((ctrlSel.codificado + cajasNum) / ctrlSel.permitido) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    {excede ? (
+                      <div className="mt-3 flex items-start gap-2 text-sm text-destructive font-medium">
+                        <AlertTriangle className="size-4 mt-0.5" />
+                        <span>
+                          Excede el máximo permitido en <b>{formatNumber(excesoCajas, 0)}</b> cajas. Saldo disponible:{" "}
+                          {formatNumber(Math.max(saldoSel, 0), 0)} cajas de {formatNumber(ctrlSel.permitido, 0)}.
+                        </span>
+                      </div>
+                    ) : saldoSel - cajasNum > 0 ? (
+                      <div className="mt-3 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="size-4 mt-0.5" />
+                        <span>
+                          Después de este registro faltarían <b>{formatNumber(saldoSel - cajasNum, 0)}</b> cajas por
+                          codificar en este lote.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="size-4 mt-0.5" />
+                        <span>Con este registro el lote queda completamente codificado.</span>
+                      </div>
+                    )}
+                    {ctrlSel.entradas > 0 && ctrlSel.permitido > ctrlSel.entradas && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Nota: el inventario registra {formatNumber(ctrlSel.entradas, 0)} cajas de entrada, menos que lo
+                        certificado en calidad ({formatNumber(ctrlSel.permitido, 0)}).
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Este lote no tiene cajas certificadas en la pestaña Calidad, no hay máximo permitido para validar.
+                  </p>
+                )}
               </div>
-            </div>
+            )}
 
             {duplicado && (
               <div className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
@@ -522,6 +710,7 @@ function CodificadoPage() {
                 </span>
               </div>
             )}
+
           </Card>
         </TabsContent>
 
