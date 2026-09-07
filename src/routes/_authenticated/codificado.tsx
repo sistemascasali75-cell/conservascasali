@@ -493,7 +493,81 @@ function CodificadoPage() {
       inventario: { cajas: 0, latas: 0, totalLatas: 0 },
     });
 
+  /* ---------- pestaña Saldos por codificar ---------- */
+  const [qSaldo, setQSaldo] = useState("");
+  const [estFiltro, setEstFiltro] = useState<"TODOS" | "PENDIENTE" | "COMPLETO" | "EXCEDIDO" | "SIN_CALIDAD">("TODOS");
+
+  const saldosView = useMemo(() => {
+    const term = qSaldo.trim().toLowerCase();
+    return controlLotes.filter((c) => {
+      if (estFiltro !== "TODOS" && c.estado !== estFiltro) return false;
+      if (term && !`${c.codigo} ${c.producto} ${c.presentacion}`.toLowerCase().includes(term)) return false;
+      return true;
+    });
+  }, [controlLotes, qSaldo, estFiltro]);
+
+  const totSaldos = useMemo(
+    () => ({
+      permitido: saldosView.reduce((a, c) => a + c.permitido, 0),
+      entradas: saldosView.reduce((a, c) => a + c.entradas, 0),
+      codificado: saldosView.reduce((a, c) => a + c.codificado, 0),
+      saldo: saldosView.reduce((a, c) => a + Math.max(c.saldo, 0), 0),
+      excedido: saldosView.filter((c) => c.estado === "EXCEDIDO").length,
+      pendientes: saldosView.filter((c) => c.estado === "PENDIENTE").length,
+      completos: saldosView.filter((c) => c.estado === "COMPLETO").length,
+    }),
+    [saldosView],
+  );
+
+  const SALDO_HEADERS = [
+    "Código de lote",
+    "Producto",
+    "Máx. permitido (calidad)",
+    "Entradas inventario",
+    "Stock actual",
+    "Codificado",
+    "Saldo por codificar",
+    "Estado",
+  ];
+  const saldoRows = saldosView.map((c) => [
+    c.codigo,
+    c.producto,
+    c.permitido,
+    c.entradas,
+    c.stock,
+    c.codificado,
+    c.saldo,
+    c.estado,
+  ]);
+  const saldoSummary = [
+    { label: "Máx. permitido", value: formatNumber(totSaldos.permitido, 0) + " cj" },
+    { label: "Entradas inventario", value: formatNumber(totSaldos.entradas, 0) + " cj" },
+    { label: "Codificado", value: formatNumber(totSaldos.codificado, 0) + " cj" },
+    { label: "Saldo por codificar", value: formatNumber(totSaldos.saldo, 0) + " cj" },
+    { label: "Lotes excedidos", value: String(totSaldos.excedido) },
+  ];
+  const doSaldoPDF = () =>
+    exportPDF({
+      title: "Saldos por codificar · Calidad vs Inventario",
+      subtitle: `Estado: ${estFiltro === "TODOS" ? "todos" : estFiltro}${qSaldo ? ` · Búsqueda: "${qSaldo}"` : ""}`,
+      headers: SALDO_HEADERS,
+      rows: saldoRows,
+      filename: "codificado_saldos.pdf",
+      summary: saldoSummary,
+      inventario: { cajas: 0, latas: 0, totalLatas: 0 },
+    });
+  const doSaldoXLS = () =>
+    exportXLSX({
+      sheetName: "Saldos codificado",
+      headers: SALDO_HEADERS,
+      rows: saldoRows,
+      filename: "codificado_saldos.xlsx",
+      summary: saldoSummary,
+      inventario: { cajas: 0, latas: 0, totalLatas: 0 },
+    });
+
   /* ---------- UI ---------- */
+
   return (
     <div className="space-y-6">
       {/* Header industrial */}
