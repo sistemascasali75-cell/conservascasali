@@ -787,6 +787,31 @@ function CodificadoPage() {
               </div>
             )}
 
+            {/* Resumen de pago + botón registrar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-xl border bg-muted/40 p-4">
+              <div className="flex items-center gap-4">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Tarifa aplicada</div>
+                  <div className="font-mono font-bold">{soles(tarifaActual)} / caja</div>
+                </div>
+                <div className="h-8 w-px bg-border" />
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Pago de este registro</div>
+                  <div className="font-mono text-xl font-bold text-amber-600 dark:text-amber-400">
+                    {soles(pagoPreview)}
+                  </div>
+                </div>
+              </div>
+              <Button
+                size="lg"
+                onClick={guardar}
+                disabled={saving || !loteSel || cajasNum <= 0 || excede}
+                className="bg-[#0f2440] hover:bg-[#1a3a5c] text-white font-semibold gap-2"
+              >
+                <Save className="size-4" />
+                {saving ? "Guardando…" : "Registrar codificado"}
+              </Button>
+            </div>
           </Card>
         </TabsContent>
 
