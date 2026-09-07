@@ -974,6 +974,179 @@ function CodificadoPage() {
           </Card>
         </TabsContent>
 
+        {/* ---------------- SALDOS POR CODIFICAR ---------------- */}
+        <TabsContent value="saldos" className="mt-4 space-y-4">
+          <Card className="p-4">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[200px]">
+                <Label className="text-xs">Buscar lote / producto</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    value={qSaldo}
+                    onChange={(e) => setQSaldo(e.target.value)}
+                    placeholder="BRFBAA…"
+                    className="pl-9 font-mono"
+                  />
+                </div>
+              </div>
+              <div className="min-w-[180px]">
+                <Label className="text-xs">Estado</Label>
+                <Select value={estFiltro} onValueChange={(v) => setEstFiltro(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="TODOS">Todos</SelectItem>
+                    <SelectItem value="PENDIENTE">Pendientes</SelectItem>
+                    <SelectItem value="COMPLETO">Completos</SelectItem>
+                    <SelectItem value="EXCEDIDO">Excedidos</SelectItem>
+                    <SelectItem value="SIN_CALIDAD">Sin certificación</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={doSaldoXLS}>
+                  <FileSpreadsheet className="size-4 mr-2" /> Excel
+                </Button>
+                <Button variant="outline" onClick={doSaldoPDF}>
+                  <FileDown className="size-4 mr-2" /> PDF
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="p-4 border-t-4 border-t-[#0f2440]">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Máx. permitido (calidad)</div>
+              <div className="font-mono text-2xl font-bold">{formatNumber(totSaldos.permitido, 0)}</div>
+              <div className="text-[10px] text-muted-foreground">cajas certificadas</div>
+            </Card>
+            <Card className="p-4 border-t-4 border-t-sky-500">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Entradas de inventario</div>
+              <div className="font-mono text-2xl font-bold">{formatNumber(totSaldos.entradas, 0)}</div>
+              <div className="text-[10px] text-muted-foreground">stock actual {formatNumber(saldosView.reduce((a, c) => a + c.stock, 0), 0)} cj</div>
+            </Card>
+            <Card className="p-4 border-t-4 border-t-amber-400">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Codificado</div>
+              <div className="font-mono text-2xl font-bold">{formatNumber(totSaldos.codificado, 0)}</div>
+              <div className="text-[10px] text-muted-foreground">{totSaldos.completos} lotes completos</div>
+            </Card>
+            <Card className="p-4 border-t-4 border-t-emerald-500">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Saldo por codificar</div>
+              <div className="font-mono text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                {formatNumber(totSaldos.saldo, 0)}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {totSaldos.pendientes} pendientes · {totSaldos.excedido} excedidos
+              </div>
+            </Card>
+          </div>
+
+          {totSaldos.excedido > 0 && (
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm">
+              <AlertTriangle className="size-4 text-destructive" />
+              {totSaldos.excedido} lote(s) con más cajas codificadas que las permitidas en calidad.
+            </div>
+          )}
+
+          <Card className="p-0 overflow-x-auto">
+            <table className="w-full text-sm min-w-[900px]">
+              <thead>
+                <tr className="bg-[#0f2440] text-white text-left text-xs uppercase tracking-wider">
+                  <th className="p-3">Código de lote</th>
+                  <th className="p-3">Producto</th>
+                  <th className="p-3 text-right">Máx. calidad</th>
+                  <th className="p-3 text-right">Entradas inv.</th>
+                  <th className="p-3 text-right">Stock</th>
+                  <th className="p-3 text-right">Codificado</th>
+                  <th className="p-3 text-right">Saldo</th>
+                  <th className="p-3">Avance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {saldosView.map((c) => {
+                  const pct = c.permitido > 0 ? Math.min(100, (c.codificado / c.permitido) * 100) : 0;
+                  return (
+                    <tr
+                      key={c.key}
+                      className={cn(
+                        "border-b last:border-0",
+                        c.estado === "EXCEDIDO" && "bg-destructive/10",
+                        c.estado === "SIN_CALIDAD" && "bg-amber-500/10",
+                      )}
+                    >
+                      <td className="p-3 font-mono text-xs whitespace-nowrap">{c.codigo}</td>
+                      <td className="p-3 text-xs text-muted-foreground max-w-[220px] truncate">{c.producto}</td>
+                      <td className="p-3 text-right font-mono">{formatNumber(c.permitido, 0)}</td>
+                      <td className="p-3 text-right font-mono">{formatNumber(c.entradas, 0)}</td>
+                      <td className="p-3 text-right font-mono text-muted-foreground">{formatNumber(c.stock, 0)}</td>
+                      <td className="p-3 text-right font-mono">{formatNumber(c.codificado, 0)}</td>
+                      <td
+                        className={cn(
+                          "p-3 text-right font-mono font-bold",
+                          c.saldo < 0 ? "text-destructive" : c.saldo === 0 ? "text-emerald-600" : "",
+                        )}
+                      >
+                        {formatNumber(c.saldo, 0)}
+                      </td>
+                      <td className="p-3 min-w-[170px]">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full",
+                                c.estado === "EXCEDIDO" ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400",
+                              )}
+                              style={{ width: `${c.estado === "EXCEDIDO" ? 100 : pct}%` }}
+                            />
+                          </div>
+                          <Badge
+                            variant={
+                              c.estado === "EXCEDIDO"
+                                ? "destructive"
+                                : c.estado === "COMPLETO"
+                                  ? "default"
+                                  : "secondary"
+                            }
+                            className="text-[10px]"
+                          >
+                            {c.estado === "SIN_CALIDAD" ? "SIN CERTIF." : c.estado}
+                          </Badge>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {saldosView.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                      Sin lotes para los filtros aplicados
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="bg-[#0f2440] text-white font-mono font-bold">
+                  <td className="p-3" colSpan={2}>
+                    TOTAL ({saldosView.length} lotes)
+                  </td>
+                  <td className="p-3 text-right">{formatNumber(totSaldos.permitido, 0)}</td>
+                  <td className="p-3 text-right">{formatNumber(totSaldos.entradas, 0)}</td>
+                  <td className="p-3 text-right">
+                    {formatNumber(saldosView.reduce((a, c) => a + c.stock, 0), 0)}
+                  </td>
+                  <td className="p-3 text-right">{formatNumber(totSaldos.codificado, 0)}</td>
+                  <td className="p-3 text-right">{formatNumber(totSaldos.saldo, 0)}</td>
+                  <td className="p-3"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </Card>
+        </TabsContent>
+
+
+
         {/* ---------------- TARIFAS ---------------- */}
         <TabsContent value="tarifas" className="mt-4">
           <Card className="p-5">
