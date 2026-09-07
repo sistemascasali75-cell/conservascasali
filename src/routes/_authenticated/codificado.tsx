@@ -608,6 +608,8 @@ function CodificadoPage() {
           <TabsTrigger value="registrar">Registrar</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="registros">Registros</TabsTrigger>
+          <TabsTrigger value="saldos">Saldos por codificar</TabsTrigger>
+
           <TabsTrigger value="tarifas">Tarifas</TabsTrigger>
         </TabsList>
 
