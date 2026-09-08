@@ -16,6 +16,8 @@ import { ShieldCheck, FlaskConical, Plus, Pencil, Trash2, FileSpreadsheet, FileT
 import { useRoles } from "@/hooks/use-role";
 import { exportPDF, exportXLSX } from "@/lib/export";
 import { CalidadImport } from "@/components/calidad-import";
+import { SearchSelect, type SearchSelectOption } from "@/components/ui/search-select";
+
 
 function ExportButtons({ onXlsx, onPdf, disabled }: { onXlsx: () => void; onPdf: () => void; disabled?: boolean }) {
   return (
