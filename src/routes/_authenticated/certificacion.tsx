@@ -385,6 +385,66 @@ function CalidadTab() {
   const obsList = useMemo(() => Array.from(new Set(rows.map((r) => r.obs).filter(Boolean))) as string[], [rows]);
   const certificaList = useMemo(() => Array.from(new Set(rows.map((r) => r.certifica).filter(Boolean))) as string[], [rows]);
 
+  // ---- Fuentes para menús desplegables / llenado rápido ----
+  const { data: lotesCat } = useQuery({
+    queryKey: ["calidad-lotes-catalogo"],
+    queryFn: async () => {
+      const [l, p] = await Promise.all([
+        supabase.from("lotes").select("id, codigo_lote, producto_id, fecha_produccion, fecha_vencimiento, estado, fecha_certificacion").order("fecha_produccion", { ascending: false }),
+        supabase.from("productos").select("id, codigo_base, descripcion, envase, presentacion"),
+      ]);
+      const pm = new Map((p.data ?? []).map((x: any) => [x.id, x]));
+      return (l.data ?? []).map((x: any) => {
+        const prod: any = pm.get(x.producto_id);
+        return {
+          codigo_lote: x.codigo_lote as string,
+          producto: (prod?.descripcion ?? prod?.codigo_base ?? null) as string | null,
+          codigo_base: (prod?.codigo_base ?? null) as string | null,
+          presentacion: (prod?.envase ?? null) as string | null,
+          estado: x.estado as string,
+          fecha_produccion: x.fecha_produccion as string,
+          fecha_vencimiento: x.fecha_vencimiento as string,
+          fecha_certificacion: (x.fecha_certificacion ?? null) as string | null,
+        };
+      });
+    },
+  });
+
+  const loteByCodigo = useMemo(() => {
+    const m = new Map<string, NonNullable<typeof lotesCat>[number]>();
+    (lotesCat ?? []).forEach((l) => { if (l.codigo_lote && !m.has(l.codigo_lote)) m.set(l.codigo_lote, l); });
+    return m;
+  }, [lotesCat]);
+
+  const loteOptions = useMemo<SearchSelectOption[]>(() =>
+    Array.from(loteByCodigo.values()).map((l) => ({
+      value: l.codigo_lote,
+      label: l.codigo_lote,
+      description: l.producto ?? undefined,
+      searchText: `${l.codigo_base ?? ""} ${l.presentacion ?? ""} ${l.estado}`,
+      meta: [
+        l.presentacion ? { label: "Envase", value: l.presentacion } : null,
+        { label: "FP", value: formatDate(l.fecha_produccion) },
+        { label: "FV", value: formatDate(l.fecha_vencimiento) },
+        { label: "Estado", value: l.estado.replace(/_/g, " ") },
+      ].filter(Boolean) as SearchSelectOption["meta"],
+    })), [loteByCodigo]);
+
+  const usuarioOptions = useMemo(
+    () => Array.from(new Set([...usuarios, "CASALI / POLAY", "CASALI", "POLAY"])).filter(Boolean).sort(),
+    [usuarios],
+  );
+  const productoNombres = useMemo(
+    () => Array.from(new Set([...(lotesCat ?? []).map((l) => l.producto), ...rows.map((r) => r.producto)].filter(Boolean) as string[])).sort(),
+    [lotesCat, rows],
+  );
+  const presentacionOptions = useMemo(
+    () => Array.from(new Set([...(lotesCat ?? []).map((l) => l.presentacion), ...rows.map((r) => r.presentacion)].filter(Boolean) as string[])).sort(),
+    [lotesCat, rows],
+  );
+  const obsOptions = useMemo(() => Array.from(new Set(obsList)).sort(), [obsList]);
+
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
