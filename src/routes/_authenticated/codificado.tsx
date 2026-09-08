@@ -493,7 +493,7 @@ function CodificadoPage() {
       inventario: { cajas: 0, latas: 0, totalLatas: 0 },
     });
 
-  /* ---------- pestaña Saldos por codificar ---------- */
+  /* ---------- pestaña Resumen por lote ---------- */
   const [qSaldo, setQSaldo] = useState("");
   const [estFiltro, setEstFiltro] = useState<"TODOS" | "PENDIENTE" | "COMPLETO" | "EXCEDIDO" | "SIN_CALIDAD">("TODOS");
 
@@ -511,7 +511,7 @@ function CodificadoPage() {
       permitido: saldosView.reduce((a, c) => a + c.permitido, 0),
       entradas: saldosView.reduce((a, c) => a + c.entradas, 0),
       codificado: saldosView.reduce((a, c) => a + c.codificado, 0),
-      saldo: saldosView.reduce((a, c) => a + Math.max(c.saldo, 0), 0),
+      faltante: saldosView.reduce((a, c) => a + Math.max(c.saldo, 0), 0),
       excedido: saldosView.filter((c) => c.estado === "EXCEDIDO").length,
       pendientes: saldosView.filter((c) => c.estado === "PENDIENTE").length,
       completos: saldosView.filter((c) => c.estado === "COMPLETO").length,
@@ -525,9 +525,9 @@ function CodificadoPage() {
     "Máx. permitido (calidad)",
     "Entradas inventario",
     "Stock actual",
-    "Codificado",
-    "Saldo por codificar",
-    "Estado",
+    "Cantidad registrada",
+    "Faltante para completar",
+    "Avance",
   ];
   const saldoRows = saldosView.map((c) => [
     c.codigo,
