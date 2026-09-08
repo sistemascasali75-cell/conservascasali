@@ -600,12 +600,36 @@ function CalidadTab() {
           <DialogHeader><DialogTitle>{edit?.id ? "Editar registro de calidad" : "Nuevo registro de calidad"}</DialogTitle></DialogHeader>
           {edit && (
             <div className="grid grid-cols-2 gap-3">
+              <datalist id="dl-usuarios">{usuarioOptions.map((v) => <option key={v} value={v} />)}</datalist>
+              <datalist id="dl-productos">{productoNombres.map((v) => <option key={v} value={v} />)}</datalist>
+              <datalist id="dl-presentaciones">{presentacionOptions.map((v) => <option key={v} value={v} />)}</datalist>
+              <datalist id="dl-obs">{obsOptions.map((v) => <option key={v} value={v} />)}</datalist>
+
               <Fld label="Item"><Input type="number" value={edit.item ?? ""} onChange={(e) => setEdit({ ...edit, item: e.target.value ? Number(e.target.value) : null })} /></Fld>
-              <Fld label="Usuario"><Input value={edit.usuario ?? ""} onChange={(e) => setEdit({ ...edit, usuario: e.target.value })} placeholder="CASALI / POLAY" /></Fld>
-              <Fld label="Producto" full><Input value={edit.producto ?? ""} onChange={(e) => setEdit({ ...edit, producto: e.target.value })} /></Fld>
-              <Fld label="Presentación"><Input value={edit.presentacion ?? ""} onChange={(e) => setEdit({ ...edit, presentacion: e.target.value })} placeholder="1/2 LB" /></Fld>
+              <Fld label="Usuario" hint="lista + escritura libre"><Input list="dl-usuarios" value={edit.usuario ?? ""} onChange={(e) => setEdit({ ...edit, usuario: e.target.value })} placeholder="CASALI / POLAY" /></Fld>
+              <Fld label="Lote / Código certif." hint="lotes registrados" full>
+                <SearchSelect
+                  value={edit.lote_codigo ?? ""}
+                  onValueChange={(v) => {
+                    const l = loteByCodigo.get(v);
+                    setEdit({
+                      ...edit,
+                      lote_codigo: v,
+                      producto: l?.producto ?? edit.producto ?? "",
+                      presentacion: l?.presentacion ?? edit.presentacion ?? "",
+                      fecha_certif: edit.fecha_certif ?? l?.fecha_certificacion ?? null,
+                    });
+                  }}
+                  options={loteOptions}
+                  placeholder="Seleccionar lote registrado"
+                  searchPlaceholder="Buscar por código, producto, presentación…"
+                  emptyText="Sin lotes"
+                  allowClear
+                />
+              </Fld>
+              <Fld label="Producto" hint="autocompletado del lote" full><Input list="dl-productos" value={edit.producto ?? ""} onChange={(e) => setEdit({ ...edit, producto: e.target.value })} /></Fld>
+              <Fld label="Presentación"><Input list="dl-presentaciones" value={edit.presentacion ?? ""} onChange={(e) => setEdit({ ...edit, presentacion: e.target.value })} placeholder="1/2 LB" /></Fld>
               <Fld label="xCertif"><Input type="number" step="0.01" value={edit.xcertif ?? ""} onChange={(e) => setEdit({ ...edit, xcertif: e.target.value ? Number(e.target.value) : null })} /></Fld>
-              <Fld label="Lote / Código certif." full><Input value={edit.lote_codigo ?? ""} onChange={(e) => setEdit({ ...edit, lote_codigo: e.target.value })} placeholder="BRFBAA FP:DD MM YYYY FV:DD MM YYYY" /></Fld>
               <Fld label="Producido" full>
                 <Input type="number" step="0.01" value={edit.producido ?? ""}
                   onChange={(e) => setEdit({ ...edit, producido: e.target.value === "" ? null : Number(e.target.value) })}
@@ -624,7 +648,7 @@ function CalidadTab() {
                 </Select>
               </Fld>
               <Fld label="Fecha certif."><Input type="date" value={edit.fecha_certif ?? ""} onChange={(e) => setEdit({ ...edit, fecha_certif: e.target.value || null })} /></Fld>
-              <Fld label="Observación" full><Input value={edit.obs ?? ""} onChange={(e) => setEdit({ ...edit, obs: e.target.value })} placeholder="QW, LOCAL, MUNICIPIO…" /></Fld>
+              <Fld label="Observación" hint="lista + escritura libre" full><Input list="dl-obs" value={edit.obs ?? ""} onChange={(e) => setEdit({ ...edit, obs: e.target.value })} placeholder="QW, LOCAL, MUNICIPIO…" /></Fld>
             </div>
           )}
           <DialogFooter>
@@ -633,6 +657,7 @@ function CalidadTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </>
   );
 }
