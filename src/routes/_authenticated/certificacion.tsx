@@ -724,11 +724,15 @@ function CalidadTab() {
   );
 }
 
-function Fld({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+function Fld({ label, children, full, hint }: { label: string; children: React.ReactNode; full?: boolean; hint?: string }) {
   return (
     <div className={`space-y-1 ${full ? "col-span-2" : ""}`}>
-      <Label className="text-xs">{label}</Label>
+      <Label className="text-xs">
+        {label}
+        {hint && <span className="ml-2 font-normal text-muted-foreground">{hint}</span>}
+      </Label>
       {children}
     </div>
   );
 }
+
