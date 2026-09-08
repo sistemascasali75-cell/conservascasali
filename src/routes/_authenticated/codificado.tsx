@@ -542,8 +542,8 @@ function CodificadoPage() {
   const saldoSummary = [
     { label: "Máx. permitido", value: formatNumber(totSaldos.permitido, 0) + " cj" },
     { label: "Entradas inventario", value: formatNumber(totSaldos.entradas, 0) + " cj" },
-    { label: "Codificado", value: formatNumber(totSaldos.codificado, 0) + " cj" },
-    { label: "Saldo por codificar", value: formatNumber(totSaldos.saldo, 0) + " cj" },
+    { label: "Cantidad registrada", value: formatNumber(totSaldos.codificado, 0) + " cj" },
+    { label: "Faltante para completar", value: formatNumber(totSaldos.faltante, 0) + " cj" },
     { label: "Lotes excedidos", value: String(totSaldos.excedido) },
   ];
   const doSaldoPDF = () =>
