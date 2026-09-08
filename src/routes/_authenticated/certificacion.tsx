@@ -16,6 +16,8 @@ import { ShieldCheck, FlaskConical, Plus, Pencil, Trash2, FileSpreadsheet, FileT
 import { useRoles } from "@/hooks/use-role";
 import { exportPDF, exportXLSX } from "@/lib/export";
 import { CalidadImport } from "@/components/calidad-import";
+import { SearchSelect, type SearchSelectOption } from "@/components/ui/search-select";
+
 
 function ExportButtons({ onXlsx, onPdf, disabled }: { onXlsx: () => void; onPdf: () => void; disabled?: boolean }) {
   return (
@@ -385,6 +387,66 @@ function CalidadTab() {
   const obsList = useMemo(() => Array.from(new Set(rows.map((r) => r.obs).filter(Boolean))) as string[], [rows]);
   const certificaList = useMemo(() => Array.from(new Set(rows.map((r) => r.certifica).filter(Boolean))) as string[], [rows]);
 
+  // ---- Fuentes para menús desplegables / llenado rápido ----
+  const { data: lotesCat } = useQuery({
+    queryKey: ["calidad-lotes-catalogo"],
+    queryFn: async () => {
+      const [l, p] = await Promise.all([
+        supabase.from("lotes").select("id, codigo_lote, producto_id, fecha_produccion, fecha_vencimiento, estado, fecha_certificacion").order("fecha_produccion", { ascending: false }),
+        supabase.from("productos").select("id, codigo_base, descripcion, envase, presentacion"),
+      ]);
+      const pm = new Map((p.data ?? []).map((x: any) => [x.id, x]));
+      return (l.data ?? []).map((x: any) => {
+        const prod: any = pm.get(x.producto_id);
+        return {
+          codigo_lote: x.codigo_lote as string,
+          producto: (prod?.descripcion ?? prod?.codigo_base ?? null) as string | null,
+          codigo_base: (prod?.codigo_base ?? null) as string | null,
+          presentacion: (prod?.envase ?? null) as string | null,
+          estado: x.estado as string,
+          fecha_produccion: x.fecha_produccion as string,
+          fecha_vencimiento: x.fecha_vencimiento as string,
+          fecha_certificacion: (x.fecha_certificacion ?? null) as string | null,
+        };
+      });
+    },
+  });
+
+  const loteByCodigo = useMemo(() => {
+    const m = new Map<string, NonNullable<typeof lotesCat>[number]>();
+    (lotesCat ?? []).forEach((l) => { if (l.codigo_lote && !m.has(l.codigo_lote)) m.set(l.codigo_lote, l); });
+    return m;
+  }, [lotesCat]);
+
+  const loteOptions = useMemo<SearchSelectOption[]>(() =>
+    Array.from(loteByCodigo.values()).map((l) => ({
+      value: l.codigo_lote,
+      label: l.codigo_lote,
+      description: l.producto ?? undefined,
+      searchText: `${l.codigo_base ?? ""} ${l.presentacion ?? ""} ${l.estado}`,
+      meta: [
+        l.presentacion ? { label: "Envase", value: l.presentacion } : null,
+        { label: "FP", value: formatDate(l.fecha_produccion) },
+        { label: "FV", value: formatDate(l.fecha_vencimiento) },
+        { label: "Estado", value: l.estado.replace(/_/g, " ") },
+      ].filter(Boolean) as SearchSelectOption["meta"],
+    })), [loteByCodigo]);
+
+  const usuarioOptions = useMemo(
+    () => Array.from(new Set([...usuarios, "CASALI / POLAY", "CASALI", "POLAY"])).filter(Boolean).sort(),
+    [usuarios],
+  );
+  const productoNombres = useMemo(
+    () => Array.from(new Set([...(lotesCat ?? []).map((l) => l.producto), ...rows.map((r) => r.producto)].filter(Boolean) as string[])).sort(),
+    [lotesCat, rows],
+  );
+  const presentacionOptions = useMemo(
+    () => Array.from(new Set([...(lotesCat ?? []).map((l) => l.presentacion), ...rows.map((r) => r.presentacion)].filter(Boolean) as string[])).sort(),
+    [lotesCat, rows],
+  );
+  const obsOptions = useMemo(() => Array.from(new Set(obsList)).sort(), [obsList]);
+
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
@@ -538,7 +600,7 @@ function CalidadTab() {
         />
         {canWrite && <CalidadImport existingItems={itemsExistentes} />}
         {canWrite && (
-          <Button onClick={() => setEdit({ ...EMPTY_CALIDAD })}><Plus className="size-4 mr-1" /> Nuevo</Button>
+          <Button onClick={() => setEdit({ ...EMPTY_CALIDAD, item: (rows.reduce((m, r) => Math.max(m, Number(r.item ?? 0)), 0) || 0) + 1, usuario: "CASALI / POLAY", fecha_certif: hoy() })}><Plus className="size-4 mr-1" /> Nuevo</Button>
         )}
       </Card>
 
@@ -600,12 +662,36 @@ function CalidadTab() {
           <DialogHeader><DialogTitle>{edit?.id ? "Editar registro de calidad" : "Nuevo registro de calidad"}</DialogTitle></DialogHeader>
           {edit && (
             <div className="grid grid-cols-2 gap-3">
+              <datalist id="dl-usuarios">{usuarioOptions.map((v) => <option key={v} value={v} />)}</datalist>
+              <datalist id="dl-productos">{productoNombres.map((v) => <option key={v} value={v} />)}</datalist>
+              <datalist id="dl-presentaciones">{presentacionOptions.map((v) => <option key={v} value={v} />)}</datalist>
+              <datalist id="dl-obs">{obsOptions.map((v) => <option key={v} value={v} />)}</datalist>
+
               <Fld label="Item"><Input type="number" value={edit.item ?? ""} onChange={(e) => setEdit({ ...edit, item: e.target.value ? Number(e.target.value) : null })} /></Fld>
-              <Fld label="Usuario"><Input value={edit.usuario ?? ""} onChange={(e) => setEdit({ ...edit, usuario: e.target.value })} placeholder="CASALI / POLAY" /></Fld>
-              <Fld label="Producto" full><Input value={edit.producto ?? ""} onChange={(e) => setEdit({ ...edit, producto: e.target.value })} /></Fld>
-              <Fld label="Presentación"><Input value={edit.presentacion ?? ""} onChange={(e) => setEdit({ ...edit, presentacion: e.target.value })} placeholder="1/2 LB" /></Fld>
+              <Fld label="Usuario" hint="lista + escritura libre"><Input list="dl-usuarios" value={edit.usuario ?? ""} onChange={(e) => setEdit({ ...edit, usuario: e.target.value })} placeholder="CASALI / POLAY" /></Fld>
+              <Fld label="Lote / Código certif." hint="lotes registrados" full>
+                <SearchSelect
+                  value={edit.lote_codigo ?? ""}
+                  onValueChange={(v) => {
+                    const l = loteByCodigo.get(v);
+                    setEdit({
+                      ...edit,
+                      lote_codigo: v,
+                      producto: l?.producto ?? edit.producto ?? "",
+                      presentacion: l?.presentacion ?? edit.presentacion ?? "",
+                      fecha_certif: edit.fecha_certif ?? l?.fecha_certificacion ?? null,
+                    });
+                  }}
+                  options={loteOptions}
+                  placeholder="Seleccionar lote registrado"
+                  searchPlaceholder="Buscar por código, producto, presentación…"
+                  emptyText="Sin lotes"
+                  allowClear
+                />
+              </Fld>
+              <Fld label="Producto" hint="autocompletado del lote" full><Input list="dl-productos" value={edit.producto ?? ""} onChange={(e) => setEdit({ ...edit, producto: e.target.value })} /></Fld>
+              <Fld label="Presentación"><Input list="dl-presentaciones" value={edit.presentacion ?? ""} onChange={(e) => setEdit({ ...edit, presentacion: e.target.value })} placeholder="1/2 LB" /></Fld>
               <Fld label="xCertif"><Input type="number" step="0.01" value={edit.xcertif ?? ""} onChange={(e) => setEdit({ ...edit, xcertif: e.target.value ? Number(e.target.value) : null })} /></Fld>
-              <Fld label="Lote / Código certif." full><Input value={edit.lote_codigo ?? ""} onChange={(e) => setEdit({ ...edit, lote_codigo: e.target.value })} placeholder="BRFBAA FP:DD MM YYYY FV:DD MM YYYY" /></Fld>
               <Fld label="Producido" full>
                 <Input type="number" step="0.01" value={edit.producido ?? ""}
                   onChange={(e) => setEdit({ ...edit, producido: e.target.value === "" ? null : Number(e.target.value) })}
@@ -624,7 +710,7 @@ function CalidadTab() {
                 </Select>
               </Fld>
               <Fld label="Fecha certif."><Input type="date" value={edit.fecha_certif ?? ""} onChange={(e) => setEdit({ ...edit, fecha_certif: e.target.value || null })} /></Fld>
-              <Fld label="Observación" full><Input value={edit.obs ?? ""} onChange={(e) => setEdit({ ...edit, obs: e.target.value })} placeholder="QW, LOCAL, MUNICIPIO…" /></Fld>
+              <Fld label="Observación" hint="lista + escritura libre" full><Input list="dl-obs" value={edit.obs ?? ""} onChange={(e) => setEdit({ ...edit, obs: e.target.value })} placeholder="QW, LOCAL, MUNICIPIO…" /></Fld>
             </div>
           )}
           <DialogFooter>
@@ -633,15 +719,20 @@ function CalidadTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </>
   );
 }
 
-function Fld({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+function Fld({ label, children, full, hint }: { label: string; children: React.ReactNode; full?: boolean; hint?: string }) {
   return (
     <div className={`space-y-1 ${full ? "col-span-2" : ""}`}>
-      <Label className="text-xs">{label}</Label>
+      <Label className="text-xs">
+        {label}
+        {hint && <span className="ml-2 font-normal text-muted-foreground">{hint}</span>}
+      </Label>
       {children}
     </div>
   );
 }
+
