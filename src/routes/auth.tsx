@@ -17,6 +17,8 @@ export const Route = createFileRoute("/auth")({
 
 export const ROLE_SESSION_KEY = "role-verified-v1";
 
+const PERMANENT_ADMIN_EMAIL = "sistemascasali75@gmail.com";
+
 const ROLE_PASSWORDS: Record<string, { password: string; label: string }> = {
   ADMIN: { password: "2026", label: "Administrador" },
   OPERADOR: { password: "o2026", label: "Operador" },
@@ -31,6 +33,7 @@ function AuthPage() {
   const [role, setRole] = useState<string>("ADMIN");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const isPermanentAdmin = userEmail?.toLowerCase() === PERMANENT_ADMIN_EMAIL;
 
   // Detectar si ya hay sesión Google → pasar a paso de rol
   useEffect(() => {
@@ -45,6 +48,9 @@ function AuthPage() {
           return;
         }
         setUserEmail(data.user.email ?? null);
+        if (data.user.email?.toLowerCase() === PERMANENT_ADMIN_EMAIL) {
+          setRole("ADMIN");
+        }
         setStep("role");
       }
     })();
@@ -63,6 +69,9 @@ function AuthPage() {
       if (result.redirected) return;
       const { data } = await supabase.auth.getUser();
       setUserEmail(data.user?.email ?? null);
+      if (data.user?.email?.toLowerCase() === PERMANENT_ADMIN_EMAIL) {
+        setRole("ADMIN");
+      }
       setStep("role");
     } catch (e: any) {
       toast.error(e.message ?? "Error con Google");
@@ -73,7 +82,8 @@ function AuthPage() {
 
   const handleRoleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cfg = ROLE_PASSWORDS[role];
+    const selectedRole = isPermanentAdmin ? "ADMIN" : role;
+    const cfg = ROLE_PASSWORDS[selectedRole];
     if (!cfg) return;
     if (password.trim() !== cfg.password) {
       toast.error("Contraseña de rol incorrecta");
@@ -82,13 +92,13 @@ function AuthPage() {
     setLoading(true);
     try {
       const { error } = await supabase.rpc("claim_role_with_password", {
-        p_role: role as any,
+        p_role: selectedRole as any,
         p_password: password.trim(),
       });
       if (error) throw error;
       sessionStorage.setItem(
         ROLE_SESSION_KEY,
-        JSON.stringify({ role, ts: Date.now() }),
+        JSON.stringify({ role: selectedRole, ts: Date.now() }),
       );
       window.dispatchEvent(new Event("role-verified-changed"));
       toast.success(`Bienvenido, ${cfg.label}`);
@@ -157,12 +167,17 @@ function AuthPage() {
 
             <div className="space-y-2">
               <Label>Rol</Label>
-              <RadioGroup value={role} onValueChange={setRole} className="grid grid-cols-2 gap-2">
+              <RadioGroup
+                value={isPermanentAdmin ? "ADMIN" : role}
+                onValueChange={setRole}
+                disabled={isPermanentAdmin}
+                className="grid grid-cols-2 gap-2"
+              >
                 {Object.entries(ROLE_PASSWORDS).map(([key, cfg]) => (
                   <label
                     key={key}
                     className={`flex flex-col items-center gap-1 rounded-lg border p-3 cursor-pointer transition ${
-                      role === key
+                      (isPermanentAdmin ? "ADMIN" : role) === key
                         ? "border-primary bg-primary/10"
                         : "border-white/10 hover:border-white/20"
                     }`}
