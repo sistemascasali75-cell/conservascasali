@@ -1007,6 +1007,78 @@ function CodificadoPage() {
               </div>
             </Card>
           </div>
+
+          {/* Últimos 6 lotes registrados */}
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-3 text-sm font-semibold">
+              <Barcode className="size-4 text-[#0f2440] dark:text-amber-400" /> Movimiento y resumen · últimos 6 lotes
+              registrados
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {ultimosLotes.map((l) => (
+                <div key={l.key} className="rounded-xl border p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs font-bold truncate">{l.codigo}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">{l.descripcion || "—"}</div>
+                    </div>
+                    {l.exceso > 0 ? (
+                      <Badge variant="destructive" className="shrink-0 text-[10px]">EXCEDIDO</Badge>
+                    ) : l.permitido > 0 && l.faltante === 0 ? (
+                      <Badge className="shrink-0 bg-emerald-600 hover:bg-emerald-600 text-[10px]">COMPLETO</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="shrink-0 text-[10px]">EN PROCESO</Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <div className="font-mono text-base font-bold">{formatNumber(l.cajas, 0)}</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">registrado</div>
+                    </div>
+                    <div>
+                      <div className="font-mono text-base font-bold">{formatNumber(l.permitido, 0)}</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">permitido</div>
+                    </div>
+                    <div>
+                      <div
+                        className={cn(
+                          "font-mono text-base font-bold",
+                          l.exceso > 0 ? "text-destructive" : "text-amber-600 dark:text-amber-400",
+                        )}
+                      >
+                        {formatNumber(l.exceso > 0 ? l.exceso : l.faltante, 0)}
+                      </div>
+                      <div className="text-[10px] uppercase text-muted-foreground">
+                        {l.exceso > 0 ? "excedido" : "faltante"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full",
+                        l.exceso > 0 ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400",
+                      )}
+                      style={{ width: `${l.permitido > 0 ? l.avance : 100}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
+                    <span>{formatDate(l.ultima)} · {l.registros} reg.</span>
+                    <span>{l.maquinasTxt}</span>
+                  </div>
+                  <div className="rounded-lg bg-amber-400/20 px-2 py-1 text-center font-mono text-sm font-bold text-amber-700 dark:text-amber-300">
+                    {soles(l.pago)}
+                  </div>
+                </div>
+              ))}
+              {ultimosLotes.length === 0 && (
+                <p className="text-sm text-muted-foreground py-6 text-center sm:col-span-2 xl:col-span-3">
+                  Aún no hay lotes registrados.
+                </p>
+              )}
+            </div>
+          </Card>
+
         </TabsContent>
 
         {/* ---------------- REGISTROS ---------------- */}
