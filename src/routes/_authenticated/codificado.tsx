@@ -884,7 +884,7 @@ function CodificadoPage() {
               <Button
                 size="lg"
                 onClick={guardar}
-                disabled={saving || !loteSel || cajasNum <= 0 || excede}
+                disabled={saving || !loteSel || cajasNum <= 0}
                 className="bg-[#0f2440] hover:bg-[#1a3a5c] text-white font-semibold gap-2"
               >
                 <Save className="size-4" />
