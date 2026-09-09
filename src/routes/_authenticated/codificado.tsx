@@ -301,8 +301,68 @@ function CodificadoPage() {
     [loteSel, controlLotes],
   );
   const saldoSel = ctrlSel?.saldo ?? 0;
-  const excede = !!ctrlSel && ctrlSel.permitido > 0 && cajasNum > saldoSel;
-  const excesoCajas = excede ? cajasNum - saldoSel : 0;
+  const conPermitido = !!ctrlSel && ctrlSel.permitido > 0;
+  /* proyección con el registro actual (no bloquea, solo alerta) */
+  const saldoProyectado = saldoSel - cajasNum;
+  const excede = conPermitido && saldoProyectado < 0;
+  const excesoCajas = excede ? -saldoProyectado : 0;
+  /* falta poco: queda <= 10% del permitido (mínimo 1 caja) y aún no se excede */
+  const umbralCasi = Math.max(1, Math.ceil((ctrlSel?.permitido ?? 0) * 0.1));
+  const casiCompleto = conPermitido && saldoProyectado > 0 && saldoProyectado <= umbralCasi;
+
+  /* últimos 6 lotes registrados (por fecha de registro) */
+  const ultimosLotes = useMemo(() => {
+    const orden = [...(registrosQ.data ?? [])].sort(
+      (a, b) => b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id),
+    );
+    const map = new Map<
+      string,
+      {
+        codigo: string;
+        descripcion: string;
+        cajas: number;
+        pago: number;
+        registros: number;
+        ultima: string;
+        maquinas: Set<string>;
+      }
+    >();
+    for (const r of orden) {
+      const k = loteKey(r.codigo_lote);
+      if (!map.has(k) && map.size >= 6) continue;
+      const cur =
+        map.get(k) ??
+        {
+          codigo: r.codigo_lote,
+          descripcion: r.descripcion ?? "",
+          cajas: 0,
+          pago: 0,
+          registros: 0,
+          ultima: r.fecha,
+          maquinas: new Set<string>(),
+        };
+      cur.cajas += Number(r.cajas || 0);
+      cur.pago += Number(r.importe || 0);
+      cur.registros += 1;
+      cur.maquinas.add(r.maquina);
+      map.set(k, cur);
+    }
+    return [...map.entries()].map(([k, v]) => {
+      const ctrl = controlLotes.find((c) => c.key === k);
+      const permitido = ctrl?.permitido ?? 0;
+      const saldo = permitido - v.cajas;
+      return {
+        key: k,
+        ...v,
+        maquinasTxt: [...v.maquinas].sort().join(", "),
+        permitido,
+        faltante: Math.max(saldo, 0),
+        exceso: saldo < 0 ? -saldo : 0,
+        avance: permitido > 0 ? Math.min(100, (v.cajas / permitido) * 100) : 0,
+      };
+    });
+  }, [registrosQ.data, controlLotes]);
+
 
 
   const duplicado = useMemo(() => {
