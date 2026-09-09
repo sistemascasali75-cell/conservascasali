@@ -301,8 +301,68 @@ function CodificadoPage() {
     [loteSel, controlLotes],
   );
   const saldoSel = ctrlSel?.saldo ?? 0;
-  const excede = !!ctrlSel && ctrlSel.permitido > 0 && cajasNum > saldoSel;
-  const excesoCajas = excede ? cajasNum - saldoSel : 0;
+  const conPermitido = !!ctrlSel && ctrlSel.permitido > 0;
+  /* proyección con el registro actual (no bloquea, solo alerta) */
+  const saldoProyectado = saldoSel - cajasNum;
+  const excede = conPermitido && saldoProyectado < 0;
+  const excesoCajas = excede ? -saldoProyectado : 0;
+  /* falta poco: queda <= 10% del permitido (mínimo 1 caja) y aún no se excede */
+  const umbralCasi = Math.max(1, Math.ceil((ctrlSel?.permitido ?? 0) * 0.1));
+  const casiCompleto = conPermitido && saldoProyectado > 0 && saldoProyectado <= umbralCasi;
+
+  /* últimos 6 lotes registrados (por fecha de registro) */
+  const ultimosLotes = useMemo(() => {
+    const orden = [...(registrosQ.data ?? [])].sort(
+      (a, b) => b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id),
+    );
+    const map = new Map<
+      string,
+      {
+        codigo: string;
+        descripcion: string;
+        cajas: number;
+        pago: number;
+        registros: number;
+        ultima: string;
+        maquinas: Set<string>;
+      }
+    >();
+    for (const r of orden) {
+      const k = loteKey(r.codigo_lote);
+      if (!map.has(k) && map.size >= 6) continue;
+      const cur =
+        map.get(k) ??
+        {
+          codigo: r.codigo_lote,
+          descripcion: r.descripcion ?? "",
+          cajas: 0,
+          pago: 0,
+          registros: 0,
+          ultima: r.fecha,
+          maquinas: new Set<string>(),
+        };
+      cur.cajas += Number(r.cajas || 0);
+      cur.pago += Number(r.importe || 0);
+      cur.registros += 1;
+      cur.maquinas.add(r.maquina);
+      map.set(k, cur);
+    }
+    return [...map.entries()].map(([k, v]) => {
+      const ctrl = controlLotes.find((c) => c.key === k);
+      const permitido = ctrl?.permitido ?? 0;
+      const saldo = permitido - v.cajas;
+      return {
+        key: k,
+        ...v,
+        maquinasTxt: [...v.maquinas].sort().join(", "),
+        permitido,
+        faltante: Math.max(saldo, 0),
+        exceso: saldo < 0 ? -saldo : 0,
+        avance: permitido > 0 ? Math.min(100, (v.cajas / permitido) * 100) : 0,
+      };
+    });
+  }, [registrosQ.data, controlLotes]);
+
 
 
   const duplicado = useMemo(() => {
@@ -337,7 +397,14 @@ function CodificadoPage() {
     } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success(`Registrado · ${formatNumber(cajasNum, 0)} cajas · ${soles(pagoPreview)}`);
+    if (excede) {
+      toast.warning(
+        `Registrado con EXCEDIDO · ${formatNumber(excesoCajas, 0)} cajas sobre el máximo permitido`,
+      );
+    } else {
+      toast.success(`Registrado · ${formatNumber(cajasNum, 0)} cajas · ${soles(pagoPreview)}`);
+    }
+
     setCajas("");
     setObservacion("");
     qc.invalidateQueries({ queryKey: ["codificado-registros"] });
@@ -741,18 +808,36 @@ function CodificadoPage() {
                       />
                     </div>
                     {excede ? (
-                      <div className="mt-3 flex items-start gap-2 text-sm text-destructive font-medium">
-                        <AlertTriangle className="size-4 mt-0.5" />
-                        <span>
-                          Excede el máximo permitido en <b>{formatNumber(excesoCajas, 0)}</b> cajas. Saldo disponible:{" "}
-                          {formatNumber(Math.max(saldoSel, 0), 0)} cajas de {formatNumber(ctrlSel.permitido, 0)}.
-                        </span>
+                      <div className="mt-3 rounded-lg border border-destructive/60 bg-destructive/10 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="destructive" className="gap-1 font-semibold tracking-wide">
+                            <AlertTriangle className="size-3.5" /> EXCEDIDO
+                          </Badge>
+                          <span className="font-mono text-sm font-bold text-destructive">
+                            + {formatNumber(excesoCajas, 0)} cajas excedidas
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-destructive/90">
+                          Saldo disponible {formatNumber(Math.max(saldoSel, 0), 0)} de{" "}
+                          {formatNumber(ctrlSel.permitido, 0)} cajas certificadas. El registro sí se puede guardar.
+                        </p>
                       </div>
-                    ) : saldoSel - cajasNum > 0 ? (
+                    ) : casiCompleto ? (
+                      <div className="mt-3 rounded-lg border border-amber-500/60 bg-amber-500/10 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className="bg-amber-500 text-[#0f2440] gap-1 font-semibold tracking-wide hover:bg-amber-500">
+                            <AlertTriangle className="size-3.5" /> FALTA POCO
+                          </Badge>
+                          <span className="font-mono text-sm font-bold text-amber-700 dark:text-amber-300">
+                            {formatNumber(saldoProyectado, 0)} cajas para completar el lote
+                          </span>
+                        </div>
+                      </div>
+                    ) : saldoProyectado > 0 ? (
                       <div className="mt-3 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                         <CheckCircle2 className="size-4 mt-0.5" />
                         <span>
-                          Después de este registro faltarían <b>{formatNumber(saldoSel - cajasNum, 0)}</b> cajas por
+                          Después de este registro faltarían <b>{formatNumber(saldoProyectado, 0)}</b> cajas por
                           codificar en este lote.
                         </span>
                       </div>
@@ -762,6 +847,7 @@ function CodificadoPage() {
                         <span>Con este registro el lote queda completamente codificado.</span>
                       </div>
                     )}
+
                     {ctrlSel.entradas > 0 && ctrlSel.permitido > ctrlSel.entradas && (
                       <p className="mt-2 text-xs text-muted-foreground">
                         Nota: el inventario registra {formatNumber(ctrlSel.entradas, 0)} cajas de entrada, menos que lo
@@ -805,7 +891,7 @@ function CodificadoPage() {
               <Button
                 size="lg"
                 onClick={guardar}
-                disabled={saving || !loteSel || cajasNum <= 0 || excede}
+                disabled={saving || !loteSel || cajasNum <= 0}
                 className="bg-[#0f2440] hover:bg-[#1a3a5c] text-white font-semibold gap-2"
               >
                 <Save className="size-4" />
@@ -921,6 +1007,78 @@ function CodificadoPage() {
               </div>
             </Card>
           </div>
+
+          {/* Últimos 6 lotes registrados */}
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-3 text-sm font-semibold">
+              <Barcode className="size-4 text-[#0f2440] dark:text-amber-400" /> Movimiento y resumen · últimos 6 lotes
+              registrados
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {ultimosLotes.map((l) => (
+                <div key={l.key} className="rounded-xl border p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs font-bold truncate">{l.codigo}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">{l.descripcion || "—"}</div>
+                    </div>
+                    {l.exceso > 0 ? (
+                      <Badge variant="destructive" className="shrink-0 text-[10px]">EXCEDIDO</Badge>
+                    ) : l.permitido > 0 && l.faltante === 0 ? (
+                      <Badge className="shrink-0 bg-emerald-600 hover:bg-emerald-600 text-[10px]">COMPLETO</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="shrink-0 text-[10px]">EN PROCESO</Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <div className="font-mono text-base font-bold">{formatNumber(l.cajas, 0)}</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">registrado</div>
+                    </div>
+                    <div>
+                      <div className="font-mono text-base font-bold">{formatNumber(l.permitido, 0)}</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">permitido</div>
+                    </div>
+                    <div>
+                      <div
+                        className={cn(
+                          "font-mono text-base font-bold",
+                          l.exceso > 0 ? "text-destructive" : "text-amber-600 dark:text-amber-400",
+                        )}
+                      >
+                        {formatNumber(l.exceso > 0 ? l.exceso : l.faltante, 0)}
+                      </div>
+                      <div className="text-[10px] uppercase text-muted-foreground">
+                        {l.exceso > 0 ? "excedido" : "faltante"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full",
+                        l.exceso > 0 ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400",
+                      )}
+                      style={{ width: `${l.permitido > 0 ? l.avance : 100}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
+                    <span>{formatDate(l.ultima)} · {l.registros} reg.</span>
+                    <span>{l.maquinasTxt}</span>
+                  </div>
+                  <div className="rounded-lg bg-amber-400/20 px-2 py-1 text-center font-mono text-sm font-bold text-amber-700 dark:text-amber-300">
+                    {soles(l.pago)}
+                  </div>
+                </div>
+              ))}
+              {ultimosLotes.length === 0 && (
+                <p className="text-sm text-muted-foreground py-6 text-center sm:col-span-2 xl:col-span-3">
+                  Aún no hay lotes registrados.
+                </p>
+              )}
+            </div>
+          </Card>
+
         </TabsContent>
 
         {/* ---------------- REGISTROS ---------------- */}
