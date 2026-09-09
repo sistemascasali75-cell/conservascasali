@@ -397,7 +397,14 @@ function CodificadoPage() {
     } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success(`Registrado · ${formatNumber(cajasNum, 0)} cajas · ${soles(pagoPreview)}`);
+    if (excede) {
+      toast.warning(
+        `Registrado con EXCEDIDO · ${formatNumber(excesoCajas, 0)} cajas sobre el máximo permitido`,
+      );
+    } else {
+      toast.success(`Registrado · ${formatNumber(cajasNum, 0)} cajas · ${soles(pagoPreview)}`);
+    }
+
     setCajas("");
     setObservacion("");
     qc.invalidateQueries({ queryKey: ["codificado-registros"] });
