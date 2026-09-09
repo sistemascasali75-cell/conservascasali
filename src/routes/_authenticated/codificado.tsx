@@ -1053,14 +1053,14 @@ function CodificadoPage() {
               <div className="text-[10px] text-muted-foreground">stock actual {formatNumber(saldosView.reduce((a, c) => a + c.stock, 0), 0)} cj</div>
             </Card>
             <Card className="p-4 border-t-4 border-t-amber-400">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Codificado</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Cantidad registrada</div>
               <div className="font-mono text-2xl font-bold">{formatNumber(totSaldos.codificado, 0)}</div>
               <div className="text-[10px] text-muted-foreground">{totSaldos.completos} lotes completos</div>
             </Card>
             <Card className="p-4 border-t-4 border-t-emerald-500">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Saldo por codificar</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Faltante para completar</div>
               <div className="font-mono text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {formatNumber(totSaldos.saldo, 0)}
+                {formatNumber(totSaldos.faltante, 0)}
               </div>
               <div className="text-[10px] text-muted-foreground">
                 {totSaldos.pendientes} pendientes · {totSaldos.excedido} excedidos
@@ -1084,8 +1084,8 @@ function CodificadoPage() {
                   <th className="p-3 text-right">Máx. calidad</th>
                   <th className="p-3 text-right">Entradas inv.</th>
                   <th className="p-3 text-right">Stock</th>
-                  <th className="p-3 text-right">Codificado</th>
-                  <th className="p-3 text-right">Saldo</th>
+                  <th className="p-3 text-right">Cantidad registrada</th>
+                  <th className="p-3 text-right">Faltante</th>
                   <th className="p-3">Avance</th>
                 </tr>
               </thead>
@@ -1162,7 +1162,7 @@ function CodificadoPage() {
                     {formatNumber(saldosView.reduce((a, c) => a + c.stock, 0), 0)}
                   </td>
                   <td className="p-3 text-right">{formatNumber(totSaldos.codificado, 0)}</td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.saldo, 0)}</td>
+                  <td className="p-3 text-right">{formatNumber(totSaldos.faltante, 0)}</td>
                   <td className="p-3"></td>
                 </tr>
               </tfoot>
