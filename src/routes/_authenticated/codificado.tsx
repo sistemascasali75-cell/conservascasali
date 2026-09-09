@@ -801,18 +801,36 @@ function CodificadoPage() {
                       />
                     </div>
                     {excede ? (
-                      <div className="mt-3 flex items-start gap-2 text-sm text-destructive font-medium">
-                        <AlertTriangle className="size-4 mt-0.5" />
-                        <span>
-                          Excede el máximo permitido en <b>{formatNumber(excesoCajas, 0)}</b> cajas. Saldo disponible:{" "}
-                          {formatNumber(Math.max(saldoSel, 0), 0)} cajas de {formatNumber(ctrlSel.permitido, 0)}.
-                        </span>
+                      <div className="mt-3 rounded-lg border border-destructive/60 bg-destructive/10 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="destructive" className="gap-1 font-semibold tracking-wide">
+                            <AlertTriangle className="size-3.5" /> EXCEDIDO
+                          </Badge>
+                          <span className="font-mono text-sm font-bold text-destructive">
+                            + {formatNumber(excesoCajas, 0)} cajas excedidas
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-destructive/90">
+                          Saldo disponible {formatNumber(Math.max(saldoSel, 0), 0)} de{" "}
+                          {formatNumber(ctrlSel.permitido, 0)} cajas certificadas. El registro sí se puede guardar.
+                        </p>
                       </div>
-                    ) : saldoSel - cajasNum > 0 ? (
+                    ) : casiCompleto ? (
+                      <div className="mt-3 rounded-lg border border-amber-500/60 bg-amber-500/10 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className="bg-amber-500 text-[#0f2440] gap-1 font-semibold tracking-wide hover:bg-amber-500">
+                            <AlertTriangle className="size-3.5" /> FALTA POCO
+                          </Badge>
+                          <span className="font-mono text-sm font-bold text-amber-700 dark:text-amber-300">
+                            {formatNumber(saldoProyectado, 0)} cajas para completar el lote
+                          </span>
+                        </div>
+                      </div>
+                    ) : saldoProyectado > 0 ? (
                       <div className="mt-3 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                         <CheckCircle2 className="size-4 mt-0.5" />
                         <span>
-                          Después de este registro faltarían <b>{formatNumber(saldoSel - cajasNum, 0)}</b> cajas por
+                          Después de este registro faltarían <b>{formatNumber(saldoProyectado, 0)}</b> cajas por
                           codificar en este lote.
                         </span>
                       </div>
@@ -822,6 +840,7 @@ function CodificadoPage() {
                         <span>Con este registro el lote queda completamente codificado.</span>
                       </div>
                     )}
+
                     {ctrlSel.entradas > 0 && ctrlSel.permitido > ctrlSel.entradas && (
                       <p className="mt-2 text-xs text-muted-foreground">
                         Nota: el inventario registra {formatNumber(ctrlSel.entradas, 0)} cajas de entrada, menos que lo
