@@ -586,6 +586,60 @@ function CodificadoPage() {
     [saldosView],
   );
 
+  /* fichas: agrupación inteligente de registros por lote */
+  const fichas = useMemo(() => {
+    const porKey = new Map<string, any[]>();
+    for (const r of registrosQ.data ?? []) {
+      const k = loteKey(r.codigo_lote);
+      const arr = porKey.get(k) ?? [];
+      arr.push(r);
+      porKey.set(k, arr);
+    }
+    return saldosView.map((c) => {
+      const regs = (porKey.get(c.key) ?? []).sort((a, b) => a.fecha.localeCompare(b.fecha));
+      const pago = regs.reduce((a, r) => a + Number(r.importe || 0), 0);
+      const maqMap = new Map<string, { cajas: number; pago: number; registros: number }>();
+      const dias = new Set<string>();
+      for (const r of regs) {
+        const et = `${r.maquina}${r.maquina === "MAQ-1" ? ` · ${r.turno === "NOCHE" ? "Noche" : "Día"}` : ""}`;
+        const cur = maqMap.get(et) ?? { cajas: 0, pago: 0, registros: 0 };
+        cur.cajas += Number(r.cajas || 0);
+        cur.pago += Number(r.importe || 0);
+        cur.registros += 1;
+        maqMap.set(et, cur);
+        dias.add(r.fecha);
+      }
+      const maquinas = [...maqMap.entries()]
+        .map(([label, v]) => ({ label, ...v }))
+        .sort((a, b) => b.cajas - a.cajas);
+      const exceso = c.saldo < 0 ? -c.saldo : 0;
+      const faltante = Math.max(c.saldo, 0);
+      return {
+        ...c,
+        registros: regs,
+        nRegistros: regs.length,
+        pago,
+        maquinas,
+        dias: dias.size,
+        primera: regs[0]?.fecha ?? null,
+        ultima: regs[regs.length - 1]?.fecha ?? null,
+        promDia: dias.size > 0 ? c.codificado / dias.size : 0,
+        tarifaProm: c.codificado > 0 ? pago / c.codificado : 0,
+        exceso,
+        faltante,
+        avance: c.permitido > 0 ? Math.min(100, (c.codificado / c.permitido) * 100) : 0,
+      };
+    });
+  }, [saldosView, registrosQ.data]);
+
+  const totFichas = useMemo(
+    () => ({
+      pago: fichas.reduce((a, f) => a + f.pago, 0),
+      registros: fichas.reduce((a, f) => a + f.nRegistros, 0),
+    }),
+    [fichas],
+  );
+
   const SALDO_HEADERS = [
     "Código de lote",
     "Producto",
@@ -594,44 +648,94 @@ function CodificadoPage() {
     "Stock actual",
     "Cantidad registrada",
     "Faltante para completar",
-    "Avance",
+    "Exceso",
+    "Registros",
+    "Pago S/",
+    "Estado",
   ];
-  const saldoRows = saldosView.map((c) => [
-    c.codigo,
-    c.producto,
-    c.permitido,
-    c.entradas,
-    c.stock,
-    c.codificado,
-    c.saldo,
-    c.estado,
+  const saldoRows = fichas.map((f) => [
+    f.codigo,
+    f.producto,
+    f.permitido,
+    f.entradas,
+    f.stock,
+    f.codificado,
+    f.faltante,
+    f.exceso,
+    f.nRegistros,
+    Number(f.pago.toFixed(2)),
+    f.estado,
   ]);
   const saldoSummary = [
+    { label: "Lotes", value: String(fichas.length) },
     { label: "Máx. permitido", value: formatNumber(totSaldos.permitido, 0) + " cj" },
     { label: "Entradas inventario", value: formatNumber(totSaldos.entradas, 0) + " cj" },
     { label: "Cantidad registrada", value: formatNumber(totSaldos.codificado, 0) + " cj" },
     { label: "Faltante para completar", value: formatNumber(totSaldos.faltante, 0) + " cj" },
     { label: "Lotes excedidos", value: String(totSaldos.excedido) },
+    { label: "Pago acumulado", value: soles(totFichas.pago) },
   ];
+
+  /* una ficha por lote en el PDF */
+  const fichaSections = () =>
+    fichas.map((f) => ({
+      title: `FICHA DE LOTE · ${f.codigo}  —  ${f.producto}${f.presentacion ? ` (${f.presentacion})` : ""}`,
+      headers: ["Fecha", "Máquina", "Turno", "Cajas", "Tarifa S/", "Pago S/", "Observación"],
+      rows: [
+        ["RESUMEN", "Máx. calidad", formatNumber(f.permitido, 0), "Registrado", formatNumber(f.codificado, 0), `Avance ${f.avance.toFixed(1)}%`, f.estado],
+        [
+          "RESUMEN",
+          "Faltante",
+          formatNumber(f.faltante, 0),
+          "Exceso",
+          formatNumber(f.exceso, 0),
+          `Pago ${soles(f.pago)}`,
+          `${f.nRegistros} registros · ${f.dias} días`,
+        ],
+        [
+          "RESUMEN",
+          "Entradas inv.",
+          formatNumber(f.entradas, 0),
+          "Stock",
+          formatNumber(f.stock, 0),
+          `Prom/día ${formatNumber(f.promDia, 0)} cj`,
+          f.maquinas.map((m) => `${m.label}: ${formatNumber(m.cajas, 0)} cj`).join(" | ") || "—",
+        ],
+        ["", "", "", "", "", "", ""],
+        ...f.registros.map((r) => [
+          formatDate(r.fecha),
+          r.maquina,
+          r.maquina === "MAQ-1" ? (r.turno === "NOCHE" ? "Noche" : "Día") : "—",
+          formatNumber(Number(r.cajas), 0),
+          formatNumber(Number(r.tarifa), 2),
+          formatNumber(Number(r.importe), 2),
+          r.observacion ?? "",
+        ]),
+        ...(f.registros.length === 0 ? [["Sin registros de codificado", "", "", "", "", "", ""]] : []),
+      ],
+    }));
+
   const doSaldoPDF = () =>
     exportPDF({
-      title: "Saldos por codificar · Calidad vs Inventario",
-      subtitle: `Estado: ${estFiltro === "TODOS" ? "todos" : estFiltro}${qSaldo ? ` · Búsqueda: "${qSaldo}"` : ""}`,
+      title: "Codificado · Resumen agrupado por lote",
+      subtitle: `Estado: ${estFiltro === "TODOS" ? "todos" : estFiltro}${qSaldo ? ` · Búsqueda: "${qSaldo}"` : ""} · ${fichas.length} lotes · ${totFichas.registros} registros`,
       headers: SALDO_HEADERS,
       rows: saldoRows,
-      filename: "codificado_saldos.pdf",
+      filename: "codificado_resumen_por_lote.pdf",
       summary: saldoSummary,
       inventario: { cajas: 0, latas: 0, totalLatas: 0 },
+      sections: fichaSections(),
     });
   const doSaldoXLS = () =>
     exportXLSX({
-      sheetName: "Saldos codificado",
+      sheetName: "Resumen por lote",
       headers: SALDO_HEADERS,
       rows: saldoRows,
-      filename: "codificado_saldos.xlsx",
+      filename: "codificado_resumen_por_lote.xlsx",
       summary: saldoSummary,
       inventario: { cajas: 0, latas: 0, totalLatas: 0 },
     });
+
 
   /* ---------- UI ---------- */
 
