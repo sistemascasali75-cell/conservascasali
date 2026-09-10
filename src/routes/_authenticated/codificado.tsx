@@ -563,6 +563,8 @@ function CodificadoPage() {
   /* ---------- pestaña Resumen por lote ---------- */
   const [qSaldo, setQSaldo] = useState("");
   const [estFiltro, setEstFiltro] = useState<"TODOS" | "PENDIENTE" | "COMPLETO" | "EXCEDIDO" | "SIN_CALIDAD">("TODOS");
+  const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
+
 
   const saldosView = useMemo(() => {
     const term = qSaldo.trim().toLowerCase();
@@ -586,6 +588,60 @@ function CodificadoPage() {
     [saldosView],
   );
 
+  /* fichas: agrupación inteligente de registros por lote */
+  const fichas = useMemo(() => {
+    const porKey = new Map<string, any[]>();
+    for (const r of registrosQ.data ?? []) {
+      const k = loteKey(r.codigo_lote);
+      const arr = porKey.get(k) ?? [];
+      arr.push(r);
+      porKey.set(k, arr);
+    }
+    return saldosView.map((c) => {
+      const regs = (porKey.get(c.key) ?? []).sort((a, b) => a.fecha.localeCompare(b.fecha));
+      const pago = regs.reduce((a, r) => a + Number(r.importe || 0), 0);
+      const maqMap = new Map<string, { cajas: number; pago: number; registros: number }>();
+      const dias = new Set<string>();
+      for (const r of regs) {
+        const et = `${r.maquina}${r.maquina === "MAQ-1" ? ` · ${r.turno === "NOCHE" ? "Noche" : "Día"}` : ""}`;
+        const cur = maqMap.get(et) ?? { cajas: 0, pago: 0, registros: 0 };
+        cur.cajas += Number(r.cajas || 0);
+        cur.pago += Number(r.importe || 0);
+        cur.registros += 1;
+        maqMap.set(et, cur);
+        dias.add(r.fecha);
+      }
+      const maquinas = [...maqMap.entries()]
+        .map(([label, v]) => ({ label, ...v }))
+        .sort((a, b) => b.cajas - a.cajas);
+      const exceso = c.saldo < 0 ? -c.saldo : 0;
+      const faltante = Math.max(c.saldo, 0);
+      return {
+        ...c,
+        registros: regs,
+        nRegistros: regs.length,
+        pago,
+        maquinas,
+        dias: dias.size,
+        primera: regs[0]?.fecha ?? null,
+        ultima: regs[regs.length - 1]?.fecha ?? null,
+        promDia: dias.size > 0 ? c.codificado / dias.size : 0,
+        tarifaProm: c.codificado > 0 ? pago / c.codificado : 0,
+        exceso,
+        faltante,
+        avance: c.permitido > 0 ? Math.min(100, (c.codificado / c.permitido) * 100) : 0,
+      };
+    });
+  }, [saldosView, registrosQ.data]);
+
+  const totFichas = useMemo(
+    () => ({
+      pago: fichas.reduce((a, f) => a + f.pago, 0),
+      registros: fichas.reduce((a, f) => a + f.nRegistros, 0),
+    }),
+    [fichas],
+  );
+
   const SALDO_HEADERS = [
     "Código de lote",
     "Producto",
@@ -594,44 +650,94 @@ function CodificadoPage() {
     "Stock actual",
     "Cantidad registrada",
     "Faltante para completar",
-    "Avance",
+    "Exceso",
+    "Registros",
+    "Pago S/",
+    "Estado",
   ];
-  const saldoRows = saldosView.map((c) => [
-    c.codigo,
-    c.producto,
-    c.permitido,
-    c.entradas,
-    c.stock,
-    c.codificado,
-    c.saldo,
-    c.estado,
+  const saldoRows = fichas.map((f) => [
+    f.codigo,
+    f.producto,
+    f.permitido,
+    f.entradas,
+    f.stock,
+    f.codificado,
+    f.faltante,
+    f.exceso,
+    f.nRegistros,
+    Number(f.pago.toFixed(2)),
+    f.estado,
   ]);
   const saldoSummary = [
+    { label: "Lotes", value: String(fichas.length) },
     { label: "Máx. permitido", value: formatNumber(totSaldos.permitido, 0) + " cj" },
     { label: "Entradas inventario", value: formatNumber(totSaldos.entradas, 0) + " cj" },
     { label: "Cantidad registrada", value: formatNumber(totSaldos.codificado, 0) + " cj" },
     { label: "Faltante para completar", value: formatNumber(totSaldos.faltante, 0) + " cj" },
     { label: "Lotes excedidos", value: String(totSaldos.excedido) },
+    { label: "Pago acumulado", value: soles(totFichas.pago) },
   ];
+
+  /* una ficha por lote en el PDF */
+  const fichaSections = () =>
+    fichas.map((f) => ({
+      title: `FICHA DE LOTE · ${f.codigo}  —  ${f.producto}${f.presentacion ? ` (${f.presentacion})` : ""}`,
+      headers: ["Fecha", "Máquina", "Turno", "Cajas", "Tarifa S/", "Pago S/", "Observación"],
+      rows: [
+        ["RESUMEN", "Máx. calidad", formatNumber(f.permitido, 0), "Registrado", formatNumber(f.codificado, 0), `Avance ${f.avance.toFixed(1)}%`, f.estado],
+        [
+          "RESUMEN",
+          "Faltante",
+          formatNumber(f.faltante, 0),
+          "Exceso",
+          formatNumber(f.exceso, 0),
+          `Pago ${soles(f.pago)}`,
+          `${f.nRegistros} registros · ${f.dias} días`,
+        ],
+        [
+          "RESUMEN",
+          "Entradas inv.",
+          formatNumber(f.entradas, 0),
+          "Stock",
+          formatNumber(f.stock, 0),
+          `Prom/día ${formatNumber(f.promDia, 0)} cj`,
+          f.maquinas.map((m) => `${m.label}: ${formatNumber(m.cajas, 0)} cj`).join(" | ") || "—",
+        ],
+        ["", "", "", "", "", "", ""],
+        ...f.registros.map((r) => [
+          formatDate(r.fecha),
+          r.maquina,
+          r.maquina === "MAQ-1" ? (r.turno === "NOCHE" ? "Noche" : "Día") : "—",
+          formatNumber(Number(r.cajas), 0),
+          formatNumber(Number(r.tarifa), 2),
+          formatNumber(Number(r.importe), 2),
+          r.observacion ?? "",
+        ]),
+        ...(f.registros.length === 0 ? [["Sin registros de codificado", "", "", "", "", "", ""]] : []),
+      ],
+    }));
+
   const doSaldoPDF = () =>
     exportPDF({
-      title: "Saldos por codificar · Calidad vs Inventario",
-      subtitle: `Estado: ${estFiltro === "TODOS" ? "todos" : estFiltro}${qSaldo ? ` · Búsqueda: "${qSaldo}"` : ""}`,
+      title: "Codificado · Resumen agrupado por lote",
+      subtitle: `Estado: ${estFiltro === "TODOS" ? "todos" : estFiltro}${qSaldo ? ` · Búsqueda: "${qSaldo}"` : ""} · ${fichas.length} lotes · ${totFichas.registros} registros`,
       headers: SALDO_HEADERS,
       rows: saldoRows,
-      filename: "codificado_saldos.pdf",
+      filename: "codificado_resumen_por_lote.pdf",
       summary: saldoSummary,
       inventario: { cajas: 0, latas: 0, totalLatas: 0 },
+      sections: fichaSections(),
     });
   const doSaldoXLS = () =>
     exportXLSX({
-      sheetName: "Saldos codificado",
+      sheetName: "Resumen por lote",
       headers: SALDO_HEADERS,
       rows: saldoRows,
-      filename: "codificado_saldos.xlsx",
+      filename: "codificado_resumen_por_lote.xlsx",
       summary: saldoSummary,
       inventario: { cajas: 0, latas: 0, totalLatas: 0 },
     });
+
 
   /* ---------- UI ---------- */
 
@@ -1233,99 +1339,151 @@ function CodificadoPage() {
             </div>
           )}
 
-          <Card className="p-0 overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
-              <thead>
-                <tr className="bg-[#0f2440] text-white text-left text-xs uppercase tracking-wider">
-                  <th className="p-3">Código de lote</th>
-                  <th className="p-3">Producto</th>
-                  <th className="p-3 text-right">Máx. calidad</th>
-                  <th className="p-3 text-right">Entradas inv.</th>
-                  <th className="p-3 text-right">Stock</th>
-                  <th className="p-3 text-right">Cantidad registrada</th>
-                  <th className="p-3 text-right">Faltante</th>
-                  <th className="p-3">Avance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {saldosView.map((c) => {
-                  const pct = c.permitido > 0 ? Math.min(100, (c.codificado / c.permitido) * 100) : 0;
-                  return (
-                    <tr
-                      key={c.key}
-                      className={cn(
-                        "border-b last:border-0",
-                        c.estado === "EXCEDIDO" && "bg-destructive/10",
-                        c.estado === "SIN_CALIDAD" && "bg-amber-500/10",
-                      )}
-                    >
-                      <td className="p-3 font-mono text-xs whitespace-nowrap">{c.codigo}</td>
-                      <td className="p-3 text-xs text-muted-foreground max-w-[220px] truncate">{c.producto}</td>
-                      <td className="p-3 text-right font-mono">{formatNumber(c.permitido, 0)}</td>
-                      <td className="p-3 text-right font-mono">{formatNumber(c.entradas, 0)}</td>
-                      <td className="p-3 text-right font-mono text-muted-foreground">{formatNumber(c.stock, 0)}</td>
-                      <td className="p-3 text-right font-mono">{formatNumber(c.codificado, 0)}</td>
-                      <td
-                        className={cn(
-                          "p-3 text-right font-mono font-bold",
-                          c.saldo < 0 ? "text-destructive" : c.saldo === 0 ? "text-emerald-600" : "",
-                        )}
-                      >
-                        {formatNumber(c.saldo, 0)}
-                      </td>
-                      <td className="p-3 min-w-[170px]">
+          {/* Fichas agrupadas por lote */}
+          <div className="space-y-3">
+            {fichas.map((f) => {
+              const abierta = fichaAbierta === f.key;
+              return (
+                <Card
+                  key={f.key}
+                  className={cn(
+                    "overflow-hidden",
+                    f.estado === "EXCEDIDO" && "border-destructive/60",
+                    f.estado === "SIN_CALIDAD" && "border-amber-500/60",
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setFichaAbierta(abierta ? null : f.key)}
+                    className="w-full text-left p-4 hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex flex-wrap items-start gap-3">
+                      <div className="flex-1 min-w-[210px]">
                         <div className="flex items-center gap-2">
-                          <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className={cn(
-                                "h-full rounded-full",
-                                c.estado === "EXCEDIDO" ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400",
-                              )}
-                              style={{ width: `${c.estado === "EXCEDIDO" ? 100 : pct}%` }}
-                            />
-                          </div>
+                          <span className="font-mono text-sm font-bold">{f.codigo}</span>
                           <Badge
                             variant={
-                              c.estado === "EXCEDIDO"
-                                ? "destructive"
-                                : c.estado === "COMPLETO"
-                                  ? "default"
-                                  : "secondary"
+                              f.estado === "EXCEDIDO" ? "destructive" : f.estado === "COMPLETO" ? "default" : "secondary"
                             }
                             className="text-[10px]"
                           >
-                            {c.estado === "SIN_CALIDAD" ? "SIN CERTIF." : c.estado}
+                            {f.estado === "SIN_CALIDAD" ? "SIN CERTIF." : f.estado}
                           </Badge>
+                          {abierta ? <ChevronLeft className="size-4 rotate-90 text-muted-foreground" /> : <ChevronRight className="size-4 text-muted-foreground" />}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {saldosView.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                      Sin lotes para los filtros aplicados
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              <tfoot>
-                <tr className="bg-[#0f2440] text-white font-mono font-bold">
-                  <td className="p-3" colSpan={2}>
-                    TOTAL ({saldosView.length} lotes)
-                  </td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.permitido, 0)}</td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.entradas, 0)}</td>
-                  <td className="p-3 text-right">
-                    {formatNumber(saldosView.reduce((a, c) => a + c.stock, 0), 0)}
-                  </td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.codificado, 0)}</td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.faltante, 0)}</td>
-                  <td className="p-3"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </Card>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {f.producto}
+                          {f.presentacion ? ` · ${f.presentacion}` : ""}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+                          {f.nRegistros} registros · {f.dias} días · {f.primera ? formatDate(f.primera) : "—"} → {f.ultima ? formatDate(f.ultima) : "—"}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-5 gap-y-2 text-right">
+                        <Metric label="Máx. calidad" value={formatNumber(f.permitido, 0)} />
+                        <Metric label="Registrado" value={formatNumber(f.codificado, 0)} accent />
+                        <Metric
+                          label={f.exceso > 0 ? "Excedido" : "Faltante"}
+                          value={formatNumber(f.exceso > 0 ? f.exceso : f.faltante, 0)}
+                          danger={f.exceso > 0}
+                        />
+                        <Metric label="Pago" value={soles(f.pago)} />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            f.estado === "EXCEDIDO" ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400",
+                          )}
+                          style={{ width: `${f.estado === "EXCEDIDO" ? 100 : f.avance}%` }}
+                        />
+                      </div>
+                      <span className="font-mono text-xs text-muted-foreground w-14 text-right">
+                        {f.avance.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {f.maquinas.map((m) => (
+                        <span
+                          key={m.label}
+                          className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-mono text-muted-foreground"
+                        >
+                          {m.label}: {formatNumber(m.cajas, 0)} cj · {soles(m.pago)}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+
+                  {abierta && (
+                    <div className="border-t bg-muted/20 p-4 space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-4 text-xs">
+                        <Metric label="Entradas inventario" value={formatNumber(f.entradas, 0) + " cj"} />
+                        <Metric label="Stock actual" value={formatNumber(f.stock, 0) + " cj"} />
+                        <Metric label="Promedio por día" value={formatNumber(f.promDia, 0) + " cj"} />
+                        <Metric label="Tarifa promedio" value={soles(f.tarifaProm)} />
+                      </div>
+                      <div className="overflow-x-auto rounded-lg border bg-background">
+                        <table className="w-full text-xs min-w-[560px]">
+                          <thead>
+                            <tr className="bg-[#0f2440] text-white text-left uppercase tracking-wider">
+                              <th className="p-2">Fecha</th>
+                              <th className="p-2">Máquina</th>
+                              <th className="p-2">Turno</th>
+                              <th className="p-2 text-right">Cajas</th>
+                              <th className="p-2 text-right">Tarifa</th>
+                              <th className="p-2 text-right">Pago</th>
+                              <th className="p-2">Observación</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {f.registros.map((r: any) => (
+                              <tr key={r.id} className="border-b last:border-0">
+                                <td className="p-2 font-mono">{formatDate(r.fecha)}</td>
+                                <td className="p-2 font-mono">{r.maquina}</td>
+                                <td className="p-2">
+                                  {r.maquina === "MAQ-1" ? (r.turno === "NOCHE" ? "Noche" : "Día") : "—"}
+                                </td>
+                                <td className="p-2 text-right font-mono">{formatNumber(Number(r.cajas), 0)}</td>
+                                <td className="p-2 text-right font-mono">{formatNumber(Number(r.tarifa), 2)}</td>
+                                <td className="p-2 text-right font-mono">{soles(Number(r.importe))}</td>
+                                <td className="p-2 text-muted-foreground">{r.observacion ?? ""}</td>
+                              </tr>
+                            ))}
+                            {f.registros.length === 0 && (
+                              <tr>
+                                <td colSpan={7} className="p-4 text-center text-muted-foreground">
+                                  Sin registros de codificado para este lote
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+            {fichas.length === 0 && (
+              <Card className="p-8 text-center text-muted-foreground">Sin lotes para los filtros aplicados</Card>
+            )}
+          </div>
+
+          {fichas.length > 0 && (
+            <Card className="p-4 bg-[#0f2440] text-white">
+              <div className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-sm">
+                <span>TOTAL {fichas.length} lotes</span>
+                <span>Máx. calidad {formatNumber(totSaldos.permitido, 0)}</span>
+                <span>Registrado {formatNumber(totSaldos.codificado, 0)}</span>
+                <span>Faltante {formatNumber(totSaldos.faltante, 0)}</span>
+                <span>Registros {totFichas.registros}</span>
+                <span className="text-amber-400 font-bold">Pago {soles(totFichas.pago)}</span>
+              </div>
+            </Card>
+          )}
+
         </TabsContent>
 
 
@@ -1376,7 +1534,7 @@ function CodificadoPage() {
   );
 }
 
-function Metric({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Metric({ label, value, accent, danger }: { label: string; value: string; accent?: boolean; danger?: boolean }) {
   return (
     <div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -1384,8 +1542,10 @@ function Metric({ label, value, accent }: { label: string; value: string; accent
         className={cn(
           "font-mono text-xl font-bold",
           accent && "text-amber-600 dark:text-amber-400",
+          danger && "text-destructive",
         )}
       >
+
         {value}
       </div>
     </div>
