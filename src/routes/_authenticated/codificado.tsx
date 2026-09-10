@@ -1339,99 +1339,151 @@ function CodificadoPage() {
             </div>
           )}
 
-          <Card className="p-0 overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
-              <thead>
-                <tr className="bg-[#0f2440] text-white text-left text-xs uppercase tracking-wider">
-                  <th className="p-3">Código de lote</th>
-                  <th className="p-3">Producto</th>
-                  <th className="p-3 text-right">Máx. calidad</th>
-                  <th className="p-3 text-right">Entradas inv.</th>
-                  <th className="p-3 text-right">Stock</th>
-                  <th className="p-3 text-right">Cantidad registrada</th>
-                  <th className="p-3 text-right">Faltante</th>
-                  <th className="p-3">Avance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {saldosView.map((c) => {
-                  const pct = c.permitido > 0 ? Math.min(100, (c.codificado / c.permitido) * 100) : 0;
-                  return (
-                    <tr
-                      key={c.key}
-                      className={cn(
-                        "border-b last:border-0",
-                        c.estado === "EXCEDIDO" && "bg-destructive/10",
-                        c.estado === "SIN_CALIDAD" && "bg-amber-500/10",
-                      )}
-                    >
-                      <td className="p-3 font-mono text-xs whitespace-nowrap">{c.codigo}</td>
-                      <td className="p-3 text-xs text-muted-foreground max-w-[220px] truncate">{c.producto}</td>
-                      <td className="p-3 text-right font-mono">{formatNumber(c.permitido, 0)}</td>
-                      <td className="p-3 text-right font-mono">{formatNumber(c.entradas, 0)}</td>
-                      <td className="p-3 text-right font-mono text-muted-foreground">{formatNumber(c.stock, 0)}</td>
-                      <td className="p-3 text-right font-mono">{formatNumber(c.codificado, 0)}</td>
-                      <td
-                        className={cn(
-                          "p-3 text-right font-mono font-bold",
-                          c.saldo < 0 ? "text-destructive" : c.saldo === 0 ? "text-emerald-600" : "",
-                        )}
-                      >
-                        {formatNumber(c.saldo, 0)}
-                      </td>
-                      <td className="p-3 min-w-[170px]">
+          {/* Fichas agrupadas por lote */}
+          <div className="space-y-3">
+            {fichas.map((f) => {
+              const abierta = fichaAbierta === f.key;
+              return (
+                <Card
+                  key={f.key}
+                  className={cn(
+                    "overflow-hidden",
+                    f.estado === "EXCEDIDO" && "border-destructive/60",
+                    f.estado === "SIN_CALIDAD" && "border-amber-500/60",
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setFichaAbierta(abierta ? null : f.key)}
+                    className="w-full text-left p-4 hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex flex-wrap items-start gap-3">
+                      <div className="flex-1 min-w-[210px]">
                         <div className="flex items-center gap-2">
-                          <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className={cn(
-                                "h-full rounded-full",
-                                c.estado === "EXCEDIDO" ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400",
-                              )}
-                              style={{ width: `${c.estado === "EXCEDIDO" ? 100 : pct}%` }}
-                            />
-                          </div>
+                          <span className="font-mono text-sm font-bold">{f.codigo}</span>
                           <Badge
                             variant={
-                              c.estado === "EXCEDIDO"
-                                ? "destructive"
-                                : c.estado === "COMPLETO"
-                                  ? "default"
-                                  : "secondary"
+                              f.estado === "EXCEDIDO" ? "destructive" : f.estado === "COMPLETO" ? "default" : "secondary"
                             }
                             className="text-[10px]"
                           >
-                            {c.estado === "SIN_CALIDAD" ? "SIN CERTIF." : c.estado}
+                            {f.estado === "SIN_CALIDAD" ? "SIN CERTIF." : f.estado}
                           </Badge>
+                          {abierta ? <ChevronLeft className="size-4 rotate-90 text-muted-foreground" /> : <ChevronRight className="size-4 text-muted-foreground" />}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {saldosView.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                      Sin lotes para los filtros aplicados
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              <tfoot>
-                <tr className="bg-[#0f2440] text-white font-mono font-bold">
-                  <td className="p-3" colSpan={2}>
-                    TOTAL ({saldosView.length} lotes)
-                  </td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.permitido, 0)}</td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.entradas, 0)}</td>
-                  <td className="p-3 text-right">
-                    {formatNumber(saldosView.reduce((a, c) => a + c.stock, 0), 0)}
-                  </td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.codificado, 0)}</td>
-                  <td className="p-3 text-right">{formatNumber(totSaldos.faltante, 0)}</td>
-                  <td className="p-3"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </Card>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {f.producto}
+                          {f.presentacion ? ` · ${f.presentacion}` : ""}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+                          {f.nRegistros} registros · {f.dias} días · {f.primera ? formatDate(f.primera) : "—"} → {f.ultima ? formatDate(f.ultima) : "—"}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-5 gap-y-2 text-right">
+                        <Metric label="Máx. calidad" value={formatNumber(f.permitido, 0)} />
+                        <Metric label="Registrado" value={formatNumber(f.codificado, 0)} accent />
+                        <Metric
+                          label={f.exceso > 0 ? "Excedido" : "Faltante"}
+                          value={formatNumber(f.exceso > 0 ? f.exceso : f.faltante, 0)}
+                          danger={f.exceso > 0}
+                        />
+                        <Metric label="Pago" value={soles(f.pago)} />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            f.estado === "EXCEDIDO" ? "bg-destructive" : "bg-gradient-to-r from-[#0f2440] to-amber-400",
+                          )}
+                          style={{ width: `${f.estado === "EXCEDIDO" ? 100 : f.avance}%` }}
+                        />
+                      </div>
+                      <span className="font-mono text-xs text-muted-foreground w-14 text-right">
+                        {f.avance.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {f.maquinas.map((m) => (
+                        <span
+                          key={m.label}
+                          className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-mono text-muted-foreground"
+                        >
+                          {m.label}: {formatNumber(m.cajas, 0)} cj · {soles(m.pago)}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+
+                  {abierta && (
+                    <div className="border-t bg-muted/20 p-4 space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-4 text-xs">
+                        <Metric label="Entradas inventario" value={formatNumber(f.entradas, 0) + " cj"} />
+                        <Metric label="Stock actual" value={formatNumber(f.stock, 0) + " cj"} />
+                        <Metric label="Promedio por día" value={formatNumber(f.promDia, 0) + " cj"} />
+                        <Metric label="Tarifa promedio" value={soles(f.tarifaProm)} />
+                      </div>
+                      <div className="overflow-x-auto rounded-lg border bg-background">
+                        <table className="w-full text-xs min-w-[560px]">
+                          <thead>
+                            <tr className="bg-[#0f2440] text-white text-left uppercase tracking-wider">
+                              <th className="p-2">Fecha</th>
+                              <th className="p-2">Máquina</th>
+                              <th className="p-2">Turno</th>
+                              <th className="p-2 text-right">Cajas</th>
+                              <th className="p-2 text-right">Tarifa</th>
+                              <th className="p-2 text-right">Pago</th>
+                              <th className="p-2">Observación</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {f.registros.map((r: any) => (
+                              <tr key={r.id} className="border-b last:border-0">
+                                <td className="p-2 font-mono">{formatDate(r.fecha)}</td>
+                                <td className="p-2 font-mono">{r.maquina}</td>
+                                <td className="p-2">
+                                  {r.maquina === "MAQ-1" ? (r.turno === "NOCHE" ? "Noche" : "Día") : "—"}
+                                </td>
+                                <td className="p-2 text-right font-mono">{formatNumber(Number(r.cajas), 0)}</td>
+                                <td className="p-2 text-right font-mono">{formatNumber(Number(r.tarifa), 2)}</td>
+                                <td className="p-2 text-right font-mono">{soles(Number(r.importe))}</td>
+                                <td className="p-2 text-muted-foreground">{r.observacion ?? ""}</td>
+                              </tr>
+                            ))}
+                            {f.registros.length === 0 && (
+                              <tr>
+                                <td colSpan={7} className="p-4 text-center text-muted-foreground">
+                                  Sin registros de codificado para este lote
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+            {fichas.length === 0 && (
+              <Card className="p-8 text-center text-muted-foreground">Sin lotes para los filtros aplicados</Card>
+            )}
+          </div>
+
+          {fichas.length > 0 && (
+            <Card className="p-4 bg-[#0f2440] text-white">
+              <div className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-sm">
+                <span>TOTAL {fichas.length} lotes</span>
+                <span>Máx. calidad {formatNumber(totSaldos.permitido, 0)}</span>
+                <span>Registrado {formatNumber(totSaldos.codificado, 0)}</span>
+                <span>Faltante {formatNumber(totSaldos.faltante, 0)}</span>
+                <span>Registros {totFichas.registros}</span>
+                <span className="text-amber-400 font-bold">Pago {soles(totFichas.pago)}</span>
+              </div>
+            </Card>
+          )}
+
         </TabsContent>
 
 
