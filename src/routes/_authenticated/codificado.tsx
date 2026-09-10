@@ -563,6 +563,8 @@ function CodificadoPage() {
   /* ---------- pestaña Resumen por lote ---------- */
   const [qSaldo, setQSaldo] = useState("");
   const [estFiltro, setEstFiltro] = useState<"TODOS" | "PENDIENTE" | "COMPLETO" | "EXCEDIDO" | "SIN_CALIDAD">("TODOS");
+  const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
+
 
   const saldosView = useMemo(() => {
     const term = qSaldo.trim().toLowerCase();
