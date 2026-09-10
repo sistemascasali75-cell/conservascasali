@@ -1534,7 +1534,7 @@ function CodificadoPage() {
   );
 }
 
-function Metric({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Metric({ label, value, accent, danger }: { label: string; value: string; accent?: boolean; danger?: boolean }) {
   return (
     <div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -1542,8 +1542,10 @@ function Metric({ label, value, accent }: { label: string; value: string; accent
         className={cn(
           "font-mono text-xl font-bold",
           accent && "text-amber-600 dark:text-amber-400",
+          danger && "text-destructive",
         )}
       >
+
         {value}
       </div>
     </div>
