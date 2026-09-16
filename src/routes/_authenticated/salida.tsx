@@ -311,7 +311,7 @@ function SalidaPage() {
                 totalLatas={totalLatas}
                 onChange={setTotalLatas}
                 empaque={empaqueVal}
-                max={ubicId ? Number((ubicacionesLote.find(u => u.ubicacion_id === ubicId) as any)?.total_latas ?? disponibleUbic * empaqueVal) : null}
+                max={ubicId ? disponibleUbic : null}
                 size="lg"
                 placeholder="Ej. 125"
               />
@@ -319,7 +319,7 @@ function SalidaPage() {
                 <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                   <span>Disponible en ubicación:</span>
                   <LatasDisplay
-                    total={Number((ubicacionesLote.find(u => u.ubicacion_id === ubicId) as any)?.total_latas ?? disponibleUbic * empaqueVal)}
+                    total={disponibleUbic}
                     empaque={empaqueVal}
                     inline
                   />
