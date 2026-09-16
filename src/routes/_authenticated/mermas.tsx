@@ -98,18 +98,19 @@ function RegistrarForm() {
     if (!loteId) return [];
     if (tipo === "AJUSTE_POSITIVO") return data?.ubicaciones ?? [];
     return (data?.stock ?? [])
-      .filter(s => s.lote_id === loteId && Number(s.cantidad_cajas) > 0)
-      .map(s => {
+      .map((s: any) => ({ ...s, latasDisp: latasDeStock(s, empaqueVal) }))
+      .filter((s: any) => s.lote_id === loteId && s.latasDisp > 0)
+      .map((s: any) => {
         const u = ubicById.get(s.ubicacion_id);
         const a = u ? almById.get(u.almacen_id) : null;
-        return { ...u, cantidad: Number(s.cantidad_cajas), almNombre: a?.nombre };
+        return { ...u, cantidad: s.latasDisp, almNombre: a?.nombre };
       });
-  }, [loteId, tipo, data, ubicById, almById]);
+  }, [loteId, tipo, data, ubicById, almById, empaqueVal]);
 
   const disponible = useMemo(() => {
     if (tipo === "AJUSTE_POSITIVO") return null;
     const opt = opcionesUbic.find((o: any) => o.id === ubicId);
-    return opt ? (opt as any).cantidad : 0;
+    return opt ? Number((opt as any).cantidad) : 0;
   }, [opcionesUbic, ubicId, tipo]);
 
   const loteOptions = useMemo<SearchSelectOption[]>(() => {
