@@ -120,15 +120,16 @@ function SalidaPage() {
   const ubicacionesLote = useMemo(() => {
     if (!loteId) return [];
     return (cat?.stock ?? [])
-      .filter(s => s.lote_id === loteId && Number(s.cantidad_cajas) > 0)
-      .map(s => {
+      .map((s: any) => ({ ...s, latasDisp: latasDeStock(s, empaqueVal) }))
+      .filter((s: any) => s.lote_id === loteId && s.latasDisp > 0)
+      .map((s: any) => {
         const u = ubicById.get(s.ubicacion_id);
         const a = u ? almById.get(u.almacen_id) : null;
         return { ...s, ubicCodigo: u?.codigo, almNombre: a?.nombre };
       });
-  }, [loteId, cat, ubicById, almById]);
+  }, [loteId, cat, ubicById, almById, empaqueVal]);
 
-  const disponibleUbic = ubicacionesLote.find(u => u.ubicacion_id === ubicId)?.cantidad_cajas ?? 0;
+  const disponibleUbic = Number((ubicacionesLote.find((u: any) => u.ubicacion_id === ubicId) as any)?.latasDisp ?? 0);
 
   const productoOptions = useMemo<SearchSelectOption[]>(() => {
     return (cat?.productos ?? []).map((p: any) => {
