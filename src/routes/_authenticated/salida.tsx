@@ -162,7 +162,7 @@ function SalidaPage() {
       ),
       description: `FV ${formatDate(l.fecha_vencimiento)} · FP ${formatDate(l.fecha_produccion)}`,
       meta: [
-        { label: "Stock", value: `${formatNumber(l.stockTotal)} cajas` },
+        { label: "Stock", value: `${formatNumber(l.stockLatas, 0)} latas (${desgloseLatas(l.stockLatas, empaqueVal)})` },
         l.estado ? { label: "Estado", value: l.estado } : null,
       ].filter(Boolean) as SearchSelectOption["meta"],
     }));
