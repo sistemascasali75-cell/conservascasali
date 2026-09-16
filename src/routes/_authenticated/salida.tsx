@@ -88,12 +88,12 @@ function SalidaPage() {
 
   const lotesProducto = useMemo(() => {
     if (!productoId) return [];
-    const stockPorLote = new Map<string, number>();
-    (cat?.stock ?? []).forEach(s => stockPorLote.set(s.lote_id, (stockPorLote.get(s.lote_id) ?? 0) + Number(s.cantidad_cajas)));
+    const latasPorLote = new Map<string, number>();
+    (cat?.stock ?? []).forEach((s: any) => latasPorLote.set(s.lote_id, (latasPorLote.get(s.lote_id) ?? 0) + latasDeStock(s)));
     return (cat?.lotes ?? [])
-      .filter(l => l.producto_id === productoId && (stockPorLote.get(l.id) ?? 0) > 0)
+      .filter(l => l.producto_id === productoId && (latasPorLote.get(l.id) ?? 0) > 0)
       .filter(l => !soloCertificados || l.estado === "CERTIFICADO")
-      .map(l => ({ ...l, stockTotal: stockPorLote.get(l.id) ?? 0 }))
+      .map(l => ({ ...l, stockLatas: latasPorLote.get(l.id) ?? 0 }))
       .sort((a, b) => a.fecha_vencimiento.localeCompare(b.fecha_vencimiento));
   }, [productoId, cat, soloCertificados]);
 
