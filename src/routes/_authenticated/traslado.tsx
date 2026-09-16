@@ -390,7 +390,7 @@ function CambioLoteForm() {
     const totalLatasNum = typeof totalLatas === "number" ? totalLatas : 0;
     if (totalLatasNum <= 0) { toast.error("Ingresa el total de latas"); return; }
     const { cajas: cajasNum, latas: latasResiduo } = splitLatas(totalLatasNum, empaqueVal);
-    if (cajasNum * empaqueVal > disponible) { toast.error(`Sólo hay ${formatNumber(disponible, 0)} latas en esa ubicación`); return; }
+    if (totalLatasNum > disponible) { toast.error(`Sólo hay ${formatNumber(disponible, 0)} latas en esa ubicación`); return; }
     setSaving(true);
     try {
       const { error } = await supabase.rpc("cambiar_lote" as any, {
