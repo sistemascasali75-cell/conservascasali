@@ -15,6 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { formatDate, formatNumber } from "@/lib/format";
+import { latasDeStock, desgloseLatas } from "@/lib/empaque";
 import { toast } from "sonner";
 import { HistorialMovimientos } from "@/components/historial-movimientos";
 import { LoteSnapshotPanel } from "@/components/lote-snapshot-panel";
@@ -88,12 +89,12 @@ function SalidaPage() {
 
   const lotesProducto = useMemo(() => {
     if (!productoId) return [];
-    const stockPorLote = new Map<string, number>();
-    (cat?.stock ?? []).forEach(s => stockPorLote.set(s.lote_id, (stockPorLote.get(s.lote_id) ?? 0) + Number(s.cantidad_cajas)));
+    const latasPorLote = new Map<string, number>();
+    (cat?.stock ?? []).forEach((s: any) => latasPorLote.set(s.lote_id, (latasPorLote.get(s.lote_id) ?? 0) + latasDeStock(s)));
     return (cat?.lotes ?? [])
-      .filter(l => l.producto_id === productoId && (stockPorLote.get(l.id) ?? 0) > 0)
+      .filter(l => l.producto_id === productoId && (latasPorLote.get(l.id) ?? 0) > 0)
       .filter(l => !soloCertificados || l.estado === "CERTIFICADO")
-      .map(l => ({ ...l, stockTotal: stockPorLote.get(l.id) ?? 0 }))
+      .map(l => ({ ...l, stockLatas: latasPorLote.get(l.id) ?? 0 }))
       .sort((a, b) => a.fecha_vencimiento.localeCompare(b.fecha_vencimiento));
   }, [productoId, cat, soloCertificados]);
 
@@ -119,15 +120,16 @@ function SalidaPage() {
   const ubicacionesLote = useMemo(() => {
     if (!loteId) return [];
     return (cat?.stock ?? [])
-      .filter(s => s.lote_id === loteId && Number(s.cantidad_cajas) > 0)
-      .map(s => {
+      .map((s: any) => ({ ...s, latasDisp: latasDeStock(s, empaqueVal) }))
+      .filter((s: any) => s.lote_id === loteId && s.latasDisp > 0)
+      .map((s: any) => {
         const u = ubicById.get(s.ubicacion_id);
         const a = u ? almById.get(u.almacen_id) : null;
         return { ...s, ubicCodigo: u?.codigo, almNombre: a?.nombre };
       });
-  }, [loteId, cat, ubicById, almById]);
+  }, [loteId, cat, ubicById, almById, empaqueVal]);
 
-  const disponibleUbic = ubicacionesLote.find(u => u.ubicacion_id === ubicId)?.cantidad_cajas ?? 0;
+  const disponibleUbic = Number((ubicacionesLote.find((u: any) => u.ubicacion_id === ubicId) as any)?.latasDisp ?? 0);
 
   const productoOptions = useMemo<SearchSelectOption[]>(() => {
     return (cat?.productos ?? []).map((p: any) => {
@@ -160,20 +162,20 @@ function SalidaPage() {
       ),
       description: `FV ${formatDate(l.fecha_vencimiento)} · FP ${formatDate(l.fecha_produccion)}`,
       meta: [
-        { label: "Stock", value: `${formatNumber(l.stockTotal)} cajas` },
+        { label: "Stock", value: `${formatNumber(l.stockLatas, 0)} latas (${desgloseLatas(l.stockLatas, empaqueVal)})` },
         l.estado ? { label: "Estado", value: l.estado } : null,
       ].filter(Boolean) as SearchSelectOption["meta"],
     }));
-  }, [lotesProducto]);
+  }, [lotesProducto, empaqueVal]);
 
   const ubicacionOptions = useMemo<SearchSelectOption[]>(() => {
     return ubicacionesLote.map((u: any) => ({
       value: u.ubicacion_id,
       label: `${u.almNombre} · ${u.ubicCodigo}`,
-      description: `Disponible: ${formatNumber(u.cantidad_cajas, 3)} cajas`,
+      description: `Disponible: ${formatNumber(u.latasDisp, 0)} latas (${desgloseLatas(u.latasDisp, empaqueVal)})`,
       meta: [{ label: "Almacén", value: u.almNombre }, { label: "Ubic.", value: u.ubicCodigo }],
     }));
-  }, [ubicacionesLote]);
+  }, [ubicacionesLote, empaqueVal]);
 
   const clienteOptions = useMemo<SearchSelectOption[]>(() => {
     return (cat?.clientes ?? []).map((c: any) => ({
@@ -309,7 +311,7 @@ function SalidaPage() {
                 totalLatas={totalLatas}
                 onChange={setTotalLatas}
                 empaque={empaqueVal}
-                max={ubicId ? Number((ubicacionesLote.find(u => u.ubicacion_id === ubicId) as any)?.total_latas ?? disponibleUbic * empaqueVal) : null}
+                max={ubicId ? disponibleUbic : null}
                 size="lg"
                 placeholder="Ej. 125"
               />
@@ -317,7 +319,7 @@ function SalidaPage() {
                 <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                   <span>Disponible en ubicación:</span>
                   <LatasDisplay
-                    total={Number((ubicacionesLote.find(u => u.ubicacion_id === ubicId) as any)?.total_latas ?? disponibleUbic * empaqueVal)}
+                    total={disponibleUbic}
                     empaque={empaqueVal}
                     inline
                   />

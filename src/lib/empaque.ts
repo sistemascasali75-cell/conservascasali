@@ -35,3 +35,23 @@ export function resolveEmpaque(
     Number(empaquePorLote?.get(loteId) ?? productoEmpaque ?? 48),
   );
 }
+
+/**
+ * Latas totales disponibles en una fila de `stock_lote_ubicacion`.
+ * `total_latas` es la fuente de verdad; si no existe se deriva de cajas.
+ */
+export function latasDeStock(
+  s: { total_latas?: number | null; cantidad_cajas?: number | null },
+  empaque = 48,
+): number {
+  const tl = Number(s?.total_latas ?? 0);
+  if (tl > 0) return tl;
+  return Math.round(Number(s?.cantidad_cajas ?? 0) * Math.max(1, empaque));
+}
+
+/** "2 cajas + 29 latas" a partir de latas totales. */
+export function desgloseLatas(totalLatas: number, empaque = 48): string {
+  const emp = Math.max(1, Number(empaque) || 48);
+  const t = Math.max(0, Math.round(Number(totalLatas) || 0));
+  return `${Math.floor(t / emp)} cajas + ${t % emp} latas`;
+}

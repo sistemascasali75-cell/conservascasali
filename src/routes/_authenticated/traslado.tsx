@@ -13,6 +13,7 @@ import { ArrowLeftRight, Replace } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatNumber, formatDate, addYearsISO } from "@/lib/format";
+import { latasDeStock, desgloseLatas } from "@/lib/empaque";
 import { toast } from "sonner";
 import { HistorialMovimientos } from "@/components/historial-movimientos";
 import { LoteSnapshotPanel } from "@/components/lote-snapshot-panel";
@@ -108,8 +109,9 @@ function TrasladoForm() {
   const origenesLote = useMemo(() => {
     if (!loteId) return [];
     return (cat?.stock ?? [])
-      .filter(s => s.lote_id === loteId && Number(s.cantidad_cajas) > 0)
-      .map(s => {
+      .map((s: any) => ({ ...s, latasDisp: latasDeStock(s, empaqueVal) }))
+      .filter((s: any) => s.lote_id === loteId && s.latasDisp > 0)
+      .map((s: any) => {
         const u = ubicById.get(s.ubicacion_id);
         const a = u ? almById.get(u.almacen_id) : null;
         return { ...s, ubicCodigo: u?.codigo, almNombre: a?.nombre };
@@ -120,11 +122,11 @@ function TrasladoForm() {
     () => (cat?.ubicaciones ?? []).filter(u => u.almacen_id === almDestId && u.id !== origenId),
     [cat, almDestId, origenId],
   );
-  const disponible = origenesLote.find(u => u.ubicacion_id === origenId)?.cantidad_cajas ?? 0;
+  const disponible = Number((origenesLote.find((u: any) => u.ubicacion_id === origenId) as any)?.latasDisp ?? 0);
 
   const stockTotalByLote = useMemo(() => {
     const m = new Map<string, number>();
-    (cat?.stock ?? []).forEach((s: any) => m.set(s.lote_id, (m.get(s.lote_id) ?? 0) + Number(s.cantidad_cajas)));
+    (cat?.stock ?? []).forEach((s: any) => m.set(s.lote_id, (m.get(s.lote_id) ?? 0) + latasDeStock(s, empaqueVal)));
     return m;
   }, [cat]);
 
@@ -138,7 +140,7 @@ function TrasladoForm() {
         description: prod ? `${prod.codigo_base} · ${prod.descripcion}` : undefined,
         searchText: `${prod?.codigo_base ?? ""} ${prod?.descripcion ?? ""} ${l.estado ?? ""}`,
         meta: [
-          { label: "Stock", value: `${formatNumber(stk)} cajas` },
+          { label: "Stock", value: `${formatNumber(stk, 0)} latas (${desgloseLatas(stk, empaqueVal)})` },
           l.fecha_vencimiento ? { label: "FV", value: formatDate(l.fecha_vencimiento) } : null,
           l.fecha_produccion ? { label: "FP", value: formatDate(l.fecha_produccion) } : null,
           l.estado ? { label: "Estado", value: l.estado } : null,
@@ -150,7 +152,7 @@ function TrasladoForm() {
   const origenOptions = useMemo<SearchSelectOption[]>(() => origenesLote.map((u: any) => ({
     value: u.ubicacion_id,
     label: `${u.almNombre} · ${u.ubicCodigo}`,
-    description: `Disponible: ${formatNumber(u.cantidad_cajas, 3)} cajas`,
+    description: `Disponible: ${formatNumber(u.latasDisp, 0)} latas (${desgloseLatas(u.latasDisp, empaqueVal)})`,
     meta: [{ label: "Almacén", value: u.almNombre }, { label: "Ubic.", value: u.ubicCodigo }],
   })), [origenesLote]);
 
@@ -235,7 +237,7 @@ function TrasladoForm() {
               totalLatas={totalLatas}
               onChange={setTotalLatas}
               empaque={empaqueVal}
-              max={origenId ? Number((origenesLote.find(u => u.ubicacion_id === origenId) as any)?.total_latas ?? disponible * empaqueVal) : null}
+              max={origenId ? disponible : null}
               size="lg"
               placeholder="Ej. 240"
             />
@@ -243,7 +245,7 @@ function TrasladoForm() {
               <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                 <span>Disponible en origen:</span>
                 <LatasDisplay
-                  total={Number((origenesLote.find(u => u.ubicacion_id === origenId) as any)?.total_latas ?? disponible * empaqueVal)}
+                  total={disponible}
                   empaque={empaqueVal}
                   inline
                 />
@@ -305,7 +307,7 @@ function CambioLoteForm() {
   // Sólo lotes con stock
   const stockByLote = useMemo(() => {
     const m = new Map<string, number>();
-    (cat?.stock ?? []).forEach((s: any) => m.set(s.lote_id, (m.get(s.lote_id) ?? 0) + Number(s.cantidad_cajas)));
+    (cat?.stock ?? []).forEach((s: any) => m.set(s.lote_id, (m.get(s.lote_id) ?? 0) + latasDeStock(s, empaqueVal)));
     return m;
   }, [cat]);
 
@@ -320,7 +322,7 @@ function CambioLoteForm() {
           description: prod ? `${prod.codigo_base} · ${prod.descripcion}` : undefined,
           searchText: `${prod?.codigo_base ?? ""} ${prod?.descripcion ?? ""} ${l.estado ?? ""}`,
           meta: [
-            { label: "Stock", value: `${formatNumber(stk)} cajas` },
+            { label: "Stock", value: `${formatNumber(stk, 0)} latas (${desgloseLatas(stk, empaqueVal)})` },
             l.fecha_vencimiento ? { label: "FV", value: formatDate(l.fecha_vencimiento) } : null,
             l.estado ? { label: "Estado", value: l.estado } : null,
           ].filter(Boolean) as SearchSelectOption["meta"],
@@ -331,14 +333,15 @@ function CambioLoteForm() {
   const ubicOptionsOrigen = useMemo<SearchSelectOption[]>(() => {
     if (!loteOrigenId) return [];
     return (cat?.stock ?? [])
-      .filter((s: any) => s.lote_id === loteOrigenId && Number(s.cantidad_cajas) > 0)
+      .map((s: any) => ({ ...s, latasDisp: latasDeStock(s, empaqueVal) }))
+      .filter((s: any) => s.lote_id === loteOrigenId && s.latasDisp > 0)
       .map((s: any) => {
         const u: any = ubicById.get(s.ubicacion_id);
         const a: any = u ? almById.get(u.almacen_id) : null;
         return {
           value: s.ubicacion_id,
           label: `${a?.nombre ?? ""} · ${u?.codigo ?? ""}`,
-          description: `Disponible: ${formatNumber(s.cantidad_cajas, 3)} cajas`,
+          description: `Disponible: ${formatNumber(s.latasDisp, 0)} latas (${desgloseLatas(s.latasDisp, empaqueVal)})`,
         };
       });
   }, [cat, loteOrigenId, ubicById, almById]);
@@ -350,7 +353,7 @@ function CambioLoteForm() {
   const disponible = useMemo(() => {
     if (!loteOrigenId || !ubicacionId) return 0;
     const s: any = (cat?.stock ?? []).find((x: any) => x.lote_id === loteOrigenId && x.ubicacion_id === ubicacionId);
-    return s ? Number(s.cantidad_cajas) : 0;
+    return s ? latasDeStock(s, empaqueVal) : 0;
   }, [cat, loteOrigenId, ubicacionId]);
 
   // Defaults: copia de origen
@@ -387,7 +390,7 @@ function CambioLoteForm() {
     const totalLatasNum = typeof totalLatas === "number" ? totalLatas : 0;
     if (totalLatasNum <= 0) { toast.error("Ingresa el total de latas"); return; }
     const { cajas: cajasNum, latas: latasResiduo } = splitLatas(totalLatasNum, empaqueVal);
-    if (cajasNum > disponible) { toast.error(`Sólo hay ${formatNumber(disponible, 3)} cajas en esa ubicación`); return; }
+    if (totalLatasNum > disponible) { toast.error(`Sólo hay ${formatNumber(disponible, 0)} latas en esa ubicación`); return; }
     setSaving(true);
     try {
       const { error } = await supabase.rpc("cambiar_lote" as any, {
@@ -432,13 +435,13 @@ function CambioLoteForm() {
               totalLatas={totalLatas}
               onChange={setTotalLatas}
               empaque={empaqueVal}
-              max={ubicacionId ? disponible * empaqueVal : null}
+              max={ubicacionId ? disponible : null}
               size="lg"
             />
             {ubicacionId && (
               <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                 <span>Disponible:</span>
-                <LatasDisplay total={disponible * empaqueVal} empaque={empaqueVal} inline />
+                <LatasDisplay total={disponible} empaque={empaqueVal} inline />
               </div>
             )}
           </Field>
