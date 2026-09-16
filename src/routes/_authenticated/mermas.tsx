@@ -15,6 +15,7 @@ import { SearchSelect, type SearchSelectOption } from "@/components/ui/search-se
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { formatNumber, formatDate } from "@/lib/format";
+import { latasDeStock, desgloseLatas } from "@/lib/empaque";
 import { toast } from "sonner";
 import { LatasInput, LatasDisplay, splitLatas } from "@/components/latas-input";
 import { TamanoSelect } from "@/components/tamano-select";
@@ -220,7 +221,7 @@ function RegistrarForm() {
           {disponible !== null && ubicId && (
             <div className="text-xs text-muted-foreground flex items-center gap-2">
               <span>Disponible:</span>
-              <LatasDisplay total={Number(disponible) * empaqueVal} empaque={empaqueVal} inline />
+              <LatasDisplay total={Number(disponible)} empaque={empaqueVal} inline />
             </div>
           )}
         </div>
@@ -230,7 +231,7 @@ function RegistrarForm() {
             totalLatas={totalLatas}
             onChange={setTotalLatas}
             empaque={empaqueVal}
-            max={disponible !== null && ubicId ? Number(disponible) * empaqueVal : null}
+            max={disponible !== null && ubicId ? Number(disponible) : null}
             size="lg"
           />
         </div>
