@@ -166,16 +166,16 @@ function SalidaPage() {
         l.estado ? { label: "Estado", value: l.estado } : null,
       ].filter(Boolean) as SearchSelectOption["meta"],
     }));
-  }, [lotesProducto]);
+  }, [lotesProducto, empaqueVal]);
 
   const ubicacionOptions = useMemo<SearchSelectOption[]>(() => {
     return ubicacionesLote.map((u: any) => ({
       value: u.ubicacion_id,
       label: `${u.almNombre} · ${u.ubicCodigo}`,
-      description: `Disponible: ${formatNumber(u.cantidad_cajas, 3)} cajas`,
+      description: `Disponible: ${formatNumber(u.latasDisp, 0)} latas (${desgloseLatas(u.latasDisp, empaqueVal)})`,
       meta: [{ label: "Almacén", value: u.almNombre }, { label: "Ubic.", value: u.ubicCodigo }],
     }));
-  }, [ubicacionesLote]);
+  }, [ubicacionesLote, empaqueVal]);
 
   const clienteOptions = useMemo<SearchSelectOption[]>(() => {
     return (cat?.clientes ?? []).map((c: any) => ({
