@@ -15,6 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { formatDate, formatNumber } from "@/lib/format";
+import { latasDeStock, desgloseLatas } from "@/lib/empaque";
 import { toast } from "sonner";
 import { HistorialMovimientos } from "@/components/historial-movimientos";
 import { LoteSnapshotPanel } from "@/components/lote-snapshot-panel";
