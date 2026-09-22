@@ -225,6 +225,11 @@ function SalidaPage() {
         p_estado_lote: estadoLote || undefined,
       } as any);
       if (error) throw error;
+      if (inventariado && movId) {
+        const { error: invErr } = await (supabase as any).rpc("set_movimiento_inventariado", { p_id: movId, p_valor: true });
+        if (invErr) throw invErr;
+      }
+      setInventariado(false);
       toast.success("Salida registrada");
       setTotalLatas(""); setNroGuia(""); setNroVale(""); setNroWarrant(""); setTieneEtiqueta(false); setObservaciones(""); setTercero(""); setFecha(limaToday());
       setEmpaque24(false); setDonacion(false); setAutorizado(""); setAutorizadoOtro(""); setTamano(defaultTamano(envaseSel));
