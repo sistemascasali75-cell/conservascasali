@@ -845,6 +845,7 @@ export type Database = {
           guia_id: string | null
           id: string
           inicia_warrant: string | null
+          inventariado: boolean
           latas: number | null
           lote_id: string
           mercado_id: string | null
@@ -880,6 +881,7 @@ export type Database = {
           guia_id?: string | null
           id?: string
           inicia_warrant?: string | null
+          inventariado?: boolean
           latas?: number | null
           lote_id: string
           mercado_id?: string | null
@@ -915,6 +917,7 @@ export type Database = {
           guia_id?: string | null
           id?: string
           inicia_warrant?: string | null
+          inventariado?: boolean
           latas?: number | null
           lote_id?: string
           mercado_id?: string | null
@@ -2557,6 +2560,10 @@ export type Database = {
           p_vale_num?: string
         }
         Returns: string
+      }
+      set_movimiento_inventariado: {
+        Args: { p_id: string; p_valor: boolean }
+        Returns: undefined
       }
       upsert_lote: {
         Args: {
