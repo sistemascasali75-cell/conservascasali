@@ -49,6 +49,7 @@ import { Route as AuthenticatedVentasCotizacionesRouteImport } from './routes/_a
 import { Route as AuthenticatedReportesVencimientosRouteImport } from './routes/_authenticated/reportes/vencimientos'
 import { Route as AuthenticatedReportesValorizadoRouteImport } from './routes/_authenticated/reportes/valorizado'
 import { Route as AuthenticatedReportesJpgLoteRouteImport } from './routes/_authenticated/reportes/jpg-lote'
+import { Route as AuthenticatedReportesInventariadosRouteImport } from './routes/_authenticated/reportes/inventariados'
 import { Route as AuthenticatedReportesGerenciaRouteImport } from './routes/_authenticated/reportes/gerencia'
 import { Route as AuthenticatedReportesDespachosRouteImport } from './routes/_authenticated/reportes/despachos'
 import { Route as AuthenticatedReportesAnaliticaRouteImport } from './routes/_authenticated/reportes/analitica'
@@ -277,6 +278,12 @@ const AuthenticatedReportesJpgLoteRoute =
     path: '/reportes/jpg-lote',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportesInventariadosRoute =
+  AuthenticatedReportesInventariadosRouteImport.update({
+    id: '/reportes/inventariados',
+    path: '/reportes/inventariados',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportesGerenciaRoute =
   AuthenticatedReportesGerenciaRouteImport.update({
     id: '/reportes/gerencia',
@@ -384,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/reportes/analitica': typeof AuthenticatedReportesAnaliticaRoute
   '/reportes/despachos': typeof AuthenticatedReportesDespachosRoute
   '/reportes/gerencia': typeof AuthenticatedReportesGerenciaRoute
+  '/reportes/inventariados': typeof AuthenticatedReportesInventariadosRoute
   '/reportes/jpg-lote': typeof AuthenticatedReportesJpgLoteRoute
   '/reportes/valorizado': typeof AuthenticatedReportesValorizadoRoute
   '/reportes/vencimientos': typeof AuthenticatedReportesVencimientosRoute
@@ -436,6 +444,7 @@ export interface FileRoutesByTo {
   '/reportes/analitica': typeof AuthenticatedReportesAnaliticaRoute
   '/reportes/despachos': typeof AuthenticatedReportesDespachosRoute
   '/reportes/gerencia': typeof AuthenticatedReportesGerenciaRoute
+  '/reportes/inventariados': typeof AuthenticatedReportesInventariadosRoute
   '/reportes/jpg-lote': typeof AuthenticatedReportesJpgLoteRoute
   '/reportes/valorizado': typeof AuthenticatedReportesValorizadoRoute
   '/reportes/vencimientos': typeof AuthenticatedReportesVencimientosRoute
@@ -490,6 +499,7 @@ export interface FileRoutesById {
   '/_authenticated/reportes/analitica': typeof AuthenticatedReportesAnaliticaRoute
   '/_authenticated/reportes/despachos': typeof AuthenticatedReportesDespachosRoute
   '/_authenticated/reportes/gerencia': typeof AuthenticatedReportesGerenciaRoute
+  '/_authenticated/reportes/inventariados': typeof AuthenticatedReportesInventariadosRoute
   '/_authenticated/reportes/jpg-lote': typeof AuthenticatedReportesJpgLoteRoute
   '/_authenticated/reportes/valorizado': typeof AuthenticatedReportesValorizadoRoute
   '/_authenticated/reportes/vencimientos': typeof AuthenticatedReportesVencimientosRoute
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/reportes/analitica'
     | '/reportes/despachos'
     | '/reportes/gerencia'
+    | '/reportes/inventariados'
     | '/reportes/jpg-lote'
     | '/reportes/valorizado'
     | '/reportes/vencimientos'
@@ -596,6 +607,7 @@ export interface FileRouteTypes {
     | '/reportes/analitica'
     | '/reportes/despachos'
     | '/reportes/gerencia'
+    | '/reportes/inventariados'
     | '/reportes/jpg-lote'
     | '/reportes/valorizado'
     | '/reportes/vencimientos'
@@ -649,6 +661,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reportes/analitica'
     | '/_authenticated/reportes/despachos'
     | '/_authenticated/reportes/gerencia'
+    | '/_authenticated/reportes/inventariados'
     | '/_authenticated/reportes/jpg-lote'
     | '/_authenticated/reportes/valorizado'
     | '/_authenticated/reportes/vencimientos'
@@ -953,6 +966,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportesJpgLoteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reportes/inventariados': {
+      id: '/_authenticated/reportes/inventariados'
+      path: '/reportes/inventariados'
+      fullPath: '/reportes/inventariados'
+      preLoaderRoute: typeof AuthenticatedReportesInventariadosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reportes/gerencia': {
       id: '/_authenticated/reportes/gerencia'
       path: '/reportes/gerencia'
@@ -1068,6 +1088,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportesAnaliticaRoute: typeof AuthenticatedReportesAnaliticaRoute
   AuthenticatedReportesDespachosRoute: typeof AuthenticatedReportesDespachosRoute
   AuthenticatedReportesGerenciaRoute: typeof AuthenticatedReportesGerenciaRoute
+  AuthenticatedReportesInventariadosRoute: typeof AuthenticatedReportesInventariadosRoute
   AuthenticatedReportesJpgLoteRoute: typeof AuthenticatedReportesJpgLoteRoute
   AuthenticatedReportesValorizadoRoute: typeof AuthenticatedReportesValorizadoRoute
   AuthenticatedReportesVencimientosRoute: typeof AuthenticatedReportesVencimientosRoute
@@ -1115,6 +1136,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportesAnaliticaRoute: AuthenticatedReportesAnaliticaRoute,
   AuthenticatedReportesDespachosRoute: AuthenticatedReportesDespachosRoute,
   AuthenticatedReportesGerenciaRoute: AuthenticatedReportesGerenciaRoute,
+  AuthenticatedReportesInventariadosRoute:
+    AuthenticatedReportesInventariadosRoute,
   AuthenticatedReportesJpgLoteRoute: AuthenticatedReportesJpgLoteRoute,
   AuthenticatedReportesValorizadoRoute: AuthenticatedReportesValorizadoRoute,
   AuthenticatedReportesVencimientosRoute:

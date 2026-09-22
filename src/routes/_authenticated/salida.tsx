@@ -41,6 +41,7 @@ function SalidaPage() {
   const [nroWarrant, setNroWarrant] = useState("");
   const [tieneWarrant, setTieneWarrant] = useState(false);
   const [tieneEtiqueta, setTieneEtiqueta] = useState(false);
+  const [inventariado, setInventariado] = useState(false);
   const [observaciones, setObservaciones] = useState("");
   const [tercero, setTercero] = useState("");
   // total_latas es la fuente de verdad; latas y cajas se derivan
@@ -205,7 +206,7 @@ function SalidaPage() {
     const autorizadoFinal = autorizado === "Otros" ? autorizadoOtro.trim() : autorizado;
     setSaving(true);
     try {
-      const { error } = await supabase.rpc("registrar_movimiento", {
+      const { data: movId, error } = await supabase.rpc("registrar_movimiento", {
         p_tipo: "SALIDA", p_lote_id: loteId, p_cantidad: cajas, p_ubic_origen: ubicId,
         p_cliente_proveedor: clienteId || undefined,
         p_nro_guia: nroGuia || undefined, p_nro_vale: nroVale || undefined,
@@ -224,6 +225,11 @@ function SalidaPage() {
         p_estado_lote: estadoLote || undefined,
       } as any);
       if (error) throw error;
+      if (inventariado && movId) {
+        const { error: invErr } = await (supabase as any).rpc("set_movimiento_inventariado", { p_id: movId, p_valor: true });
+        if (invErr) throw invErr;
+      }
+      setInventariado(false);
       toast.success("Salida registrada");
       setTotalLatas(""); setNroGuia(""); setNroVale(""); setNroWarrant(""); setTieneEtiqueta(false); setObservaciones(""); setTercero(""); setFecha(limaToday());
       setEmpaque24(false); setDonacion(false); setAutorizado(""); setAutorizadoOtro(""); setTamano(defaultTamano(envaseSel));
@@ -364,6 +370,12 @@ function SalidaPage() {
               <label className="flex items-center gap-2 h-11 px-3 rounded-md border bg-background cursor-pointer">
                 <Checkbox checked={tieneEtiqueta} onCheckedChange={(v) => setTieneEtiqueta(!!v)} />
                 <span className="text-sm">Tiene etiqueta</span>
+              </label>
+            </Field>
+            <Field label="Inventariado" hint="Sí / No">
+              <label className={`flex items-center gap-2 h-11 px-3 rounded-md border cursor-pointer ${inventariado ? "bg-primary/10 border-primary" : "bg-background"}`}>
+                <Checkbox checked={inventariado} onCheckedChange={(v) => setInventariado(!!v)} />
+                <span className="text-sm font-medium">{inventariado ? "Sí, inventariado" : "No inventariado"}</span>
               </label>
             </Field>
             <Field label="Warrant" hint="Marca si la salida está comprometida">
