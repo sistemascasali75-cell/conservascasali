@@ -23,8 +23,8 @@ export const Route = createFileRoute("/_authenticated/reportes/inventariados")({
   component: Page,
 });
 
-const TIPOS = ["ENTRADA", "SALIDA", "TRASLADO", "MERMA", "AJUSTE_POSITIVO", "AJUSTE_NEGATIVO"];
-const signo = (t: string) => (t === "ENTRADA" || t === "AJUSTE_POSITIVO" ? 1 : t === "TRASLADO" ? 0 : -1);
+const TIPOS = ["ENTRADA", "SALIDA", "TRASLADO", "MERMA", "AJUSTE_POSITIVO", "AJUSTE_NEGATIVO", "CAMBIO"];
+const signo = (t: string) => (t === "ENTRADA" || t === "AJUSTE_POSITIVO" ? 1 : t === "TRASLADO" || t === "CAMBIO" ? 0 : -1);
 
 function Page() {
   const qc = useQueryClient();
