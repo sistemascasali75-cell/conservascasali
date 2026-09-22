@@ -102,6 +102,7 @@ const items: Item[] = [
   { to: "/reportes/vencimientos", label: "Vencimientos", icon: CalendarClock, section: "Reportes" },
   { to: "/reportes/valorizado", label: "Inv. valorizado", icon: DollarSign, section: "Reportes" },
   { to: "/reportes/despachos", label: "Despachos", icon: Truck, section: "Reportes" },
+  { to: "/reportes/inventariados", label: "Lotes inventariados", icon: BarChart3, section: "Reportes" },
   { to: "/descargas", label: "Descargas", icon: Upload, section: "Reportes" },
   { to: "/auditoria", label: "Auditoría", icon: Activity, section: "Reportes" },
   { to: "/historial", label: "Historial", icon: History, section: "Reportes" },
