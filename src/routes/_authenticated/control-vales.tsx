@@ -28,6 +28,7 @@ type Vale = {
   fecha: string;
   nro_vale: number;
   descripcion: string | null;
+  cajas: number | null;
   estado: string;
   autorizado: string | null;
   observacion: string | null;
@@ -109,6 +110,7 @@ function ControlVales() {
           lineas: items.length,
           autorizado: first.autorizado,
           descripciones: items.map((i) => i.descripcion).filter(Boolean).join(" · ") || null,
+          cajas: items.reduce((a, i) => a + Number(i.cajas ?? 0), 0),
           estados: Array.from(new Set(items.map((i) => i.estado))),
           movs: movsByNro.get(String(nro)) ?? [],
         };
@@ -154,6 +156,7 @@ function ControlVales() {
         fecha: editing.fecha ?? new Date().toISOString().slice(0, 10),
         nro_vale: editing.nro_vale,
         descripcion: editing.descripcion || null,
+        cajas: editing.cajas === undefined || editing.cajas === null || (editing.cajas as any) === "" ? null : Number(editing.cajas),
         estado: editing.estado ?? "EMITIDO",
         autorizado: editing.autorizado || null,
         observacion: editing.observacion || null,
