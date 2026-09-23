@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatNumber } from "@/lib/format";
 import { exportPDF, exportXLSX } from "@/lib/export";
 import { Plus, Search, FileSpreadsheet, FileText, Ticket, CheckCircle2, XCircle, Link2, Pencil, Trash2, AlertCircle } from "lucide-react";
 
