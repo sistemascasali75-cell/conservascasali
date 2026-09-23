@@ -1333,6 +1333,7 @@ export type Database = {
       vales: {
         Row: {
           autorizado: string | null
+          cajas: number | null
           created_at: string
           descripcion: string | null
           estado: string
@@ -1345,6 +1346,7 @@ export type Database = {
         }
         Insert: {
           autorizado?: string | null
+          cajas?: number | null
           created_at?: string
           descripcion?: string | null
           estado?: string
@@ -1357,6 +1359,7 @@ export type Database = {
         }
         Update: {
           autorizado?: string | null
+          cajas?: number | null
           created_at?: string
           descripcion?: string | null
           estado?: string

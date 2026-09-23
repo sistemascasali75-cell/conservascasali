@@ -1,0 +1,1 @@
+ALTER TABLE public.vales ADD COLUMN IF NOT EXISTS cajas numeric;

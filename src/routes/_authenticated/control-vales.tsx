@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatNumber } from "@/lib/format";
 import { exportPDF, exportXLSX } from "@/lib/export";
 import { Plus, Search, FileSpreadsheet, FileText, Ticket, CheckCircle2, XCircle, Link2, Pencil, Trash2, AlertCircle } from "lucide-react";
 
@@ -28,6 +28,7 @@ type Vale = {
   fecha: string;
   nro_vale: number;
   descripcion: string | null;
+  cajas: number | null;
   estado: string;
   autorizado: string | null;
   observacion: string | null;
@@ -109,6 +110,7 @@ function ControlVales() {
           lineas: items.length,
           autorizado: first.autorizado,
           descripciones: items.map((i) => i.descripcion).filter(Boolean).join(" · ") || null,
+          cajas: items.reduce((a, i) => a + Number(i.cajas ?? 0), 0),
           estados: Array.from(new Set(items.map((i) => i.estado))),
           movs: movsByNro.get(String(nro)) ?? [],
         };
@@ -154,6 +156,7 @@ function ControlVales() {
         fecha: editing.fecha ?? new Date().toISOString().slice(0, 10),
         nro_vale: editing.nro_vale,
         descripcion: editing.descripcion || null,
+        cajas: editing.cajas === undefined || editing.cajas === null || (editing.cajas as any) === "" ? null : Number(editing.cajas),
         estado: editing.estado ?? "EMITIDO",
         autorizado: editing.autorizado || null,
         observacion: editing.observacion || null,
@@ -197,8 +200,8 @@ function ControlVales() {
   const openEdit = (v: Vale) => { setEditing({ ...v }); setOpen(true); };
 
   const exportar = async (kind: "pdf" | "xlsx") => {
-    const headers = ["N° Vale", "Fecha", "Estado", "Autorizado", "Líneas", "Descripción", "Movimientos vinc."];
-    const rows = filtered.map((g) => [g.nro_vale, g.fecha, g.estados.join("/"), g.autorizado ?? "—", g.lineas, g.descripciones ?? "", g.movs.length]);
+    const headers = ["N° Vale", "Fecha", "Estado", "Autorizado", "Líneas", "Cajas", "Descripción", "Movimientos vinc."];
+    const rows = filtered.map((g) => [g.nro_vale, g.fecha, g.estados.join("/"), g.autorizado ?? "—", g.lineas, g.cajas ?? 0, g.descripciones ?? "", g.movs.length]);
     const opts = {
       title: "Control de vales de salida",
       subtitle: `${filtered.length} vales · ${new Date().toLocaleString("es-PE")}`,
@@ -278,6 +281,7 @@ function ControlVales() {
                   <TableHead>Estado</TableHead>
                   <TableHead>Autorizado</TableHead>
                   <TableHead className="text-center">Líneas</TableHead>
+                  <TableHead className="text-right">Cajas</TableHead>
                   <TableHead className="text-center">Mov.</TableHead>
                   <TableHead>Descripción</TableHead>
                 </TableRow>
@@ -297,6 +301,7 @@ function ControlVales() {
                       <TableCell><div className="flex flex-wrap gap-1">{g.estados.map((e) => <EstadoBadge key={e} e={e} />)}</div></TableCell>
                       <TableCell className="text-xs">{g.autorizado ?? "—"}</TableCell>
                       <TableCell className="text-center">{g.lineas}</TableCell>
+                      <TableCell className="text-right font-mono text-xs">{g.cajas ? formatNumber(g.cajas, 0) : "—"}</TableCell>
                       <TableCell className="text-center">
                         {linked
                           ? <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30" variant="outline"><Link2 className="size-3 mr-1" />{g.movs.length}</Badge>
@@ -347,6 +352,7 @@ function ControlVales() {
                           </div>
                         </div>
                         {it.descripcion && <div className="text-muted-foreground">{it.descripcion}</div>}
+                        {it.cajas != null && <div>Cajas: <b className="font-mono">{formatNumber(Number(it.cajas), 0)}</b></div>}
                         {it.observacion && <div className="text-muted-foreground italic">{it.observacion}</div>}
                       </div>
                     ))}
@@ -424,7 +430,10 @@ function ControlVales() {
                 </div>
               </div>
               <div className="space-y-1.5"><Label>Autorizado por</Label><Input value={editing.autorizado ?? ""} onChange={(e) => setEditing({ ...editing, autorizado: e.target.value })} placeholder="Nombre del responsable" /></div>
-              <div className="space-y-1.5"><Label>Descripción</Label><Input value={editing.descripcion ?? ""} onChange={(e) => setEditing({ ...editing, descripcion: e.target.value })} placeholder="Ej: MARCOS DE MADERA" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label>Descripción</Label><Input value={editing.descripcion ?? ""} onChange={(e) => setEditing({ ...editing, descripcion: e.target.value })} placeholder="Ej: MARCOS DE MADERA" /></div>
+                <div className="space-y-1.5"><Label>Cajas</Label><Input type="number" min="0" step="any" value={editing.cajas ?? ""} onChange={(e) => setEditing({ ...editing, cajas: e.target.value === "" ? null : Number(e.target.value) })} placeholder="0" /></div>
+              </div>
               <div className="space-y-1.5"><Label>Observación</Label><Textarea rows={2} value={editing.observacion ?? ""} onChange={(e) => setEditing({ ...editing, observacion: e.target.value })} /></div>
             </div>
           )}
