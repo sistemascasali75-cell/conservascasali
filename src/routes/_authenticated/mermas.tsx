@@ -168,10 +168,14 @@ function RegistrarForm() {
       };
       if (tipo === "AJUSTE_POSITIVO") params.p_ubic_destino = ubicId;
       else params.p_ubic_origen = ubicId;
-      const { error } = await supabase.rpc("registrar_movimiento", params);
+      const { data: movId, error } = await supabase.rpc("registrar_movimiento", params);
       if (error) throw error;
+      if (inventariado && movId) {
+        const { error: invErr } = await (supabase as any).rpc("set_movimiento_inventariado", { p_id: movId, p_valor: true });
+        if (invErr) throw invErr;
+      }
       toast.success("Movimiento registrado");
-      setTotalLatas(""); setDetalle(""); setMotivo(""); setTieneEtiqueta(false); setUbicId(""); setTercero(""); setEmpaque24(false); setTamano(defaultTamano(envaseSel));
+      setTotalLatas(""); setDetalle(""); setMotivo(""); setTieneEtiqueta(false); setUbicId(""); setTercero(""); setEmpaque24(false); setInventariado(false); setTamano(defaultTamano(envaseSel));
       qc.invalidateQueries();
     } catch (e: any) {
       toast.error(e.message ?? "Error al registrar");
@@ -248,6 +252,13 @@ function RegistrarForm() {
           <label className="flex items-center gap-2 h-11 px-3 rounded-md border bg-background cursor-pointer">
             <Checkbox checked={empaque24} onCheckedChange={(v) => setEmpaque24(!!v)} />
             <span className="text-sm">Empaque ×24 (desmarcar = ×48)</span>
+          </label>
+        </div>
+        <div className="space-y-2">
+          <Label>Inventariado <span className="text-xs text-muted-foreground font-normal ml-2">Formato casilla</span></Label>
+          <label className={`flex items-center gap-2 h-11 px-3 rounded-md border cursor-pointer ${inventariado ? "bg-primary/10 border-primary" : "bg-background"}`}>
+            <Checkbox checked={inventariado} onCheckedChange={(v) => setInventariado(!!v)} />
+            <span className="text-sm">{inventariado ? "Sí, inventariado" : "No inventariado"}</span>
           </label>
         </div>
         <div className="space-y-2">
