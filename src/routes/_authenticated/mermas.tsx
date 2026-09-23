@@ -71,6 +71,7 @@ function RegistrarForm() {
   const [tercero, setTercero] = useState("");
   const [detalle, setDetalle] = useState("");
   const [empaque24, setEmpaque24] = useState(false);
+  const [inventariado, setInventariado] = useState(false);
   const [tamano, setTamano] = useState("");
   const [saving, setSaving] = useState(false);
   const empaqueVal = empaque24 ? 24 : 48;
