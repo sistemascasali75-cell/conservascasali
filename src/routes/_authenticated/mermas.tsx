@@ -308,6 +308,7 @@ function Historial() {
             <th className="text-left px-3 py-2">Lote / Producto</th>
             <th className="text-right px-3 py-2">Cajas</th>
             <th className="text-left px-3 py-2">Motivo</th>
+            <th className="text-left px-3 py-2">Inventariado</th>
           </tr>
         </thead>
         <tbody>
