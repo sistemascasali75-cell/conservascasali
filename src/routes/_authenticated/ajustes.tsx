@@ -53,6 +53,7 @@ type Row = {
   usuario: string;
   vale: string;
   guia: string;
+  inventariado: boolean;
 };
 
 function AjustesPage() {
@@ -115,6 +116,7 @@ function AjustesPage() {
         usuario: m.usuario_nombre ?? "—",
         vale: m.nro_vale ?? "",
         guia: m.nro_guia ?? "",
+        inventariado: !!m.inventariado,
       };
     });
   }, [data]);
@@ -195,12 +197,13 @@ function AjustesPage() {
     return p.join("  ·  ");
   }, [tipoSel, desde, hasta, almacenSel, q, filtered.length]);
 
-  const detalleHeaders = ["Fecha", "Tipo", "Lote", "Producto", "Empaque", "Tamaño", "Almacén", "Ubicación", "Cajas", "Latas", "Total latas", "Motivo", "Vale", "Guía", "Usuario"];
+  const detalleHeaders = ["Fecha", "Tipo", "Lote", "Producto", "Empaque", "Tamaño", "Almacén", "Ubicación", "Cajas", "Latas", "Total latas", "Motivo", "Vale", "Guía", "Usuario", "Inventariado"];
   const detalleRows = filtered.map((r) => [
     formatDate(r.fecha),
     r.tipo === "AJUSTE_POSITIVO" ? "Ajuste positivo" : "Ajuste negativo",
     r.lote, r.producto, r.empaque, r.tamano, r.almacen, r.ubicacion,
     r.cajas, r.latas, r.totalLatas, r.motivo, r.vale, r.guia, r.usuario,
+    r.inventariado ? "Sí" : "No",
   ]);
 
   const resumen = [
@@ -464,6 +467,7 @@ function GrupoCard({ grupo }: { grupo: { tipo: Tipo; label: string; items: Row[]
                 <th className="text-right p-2">Latas</th>
                 <th className="text-right p-2">Total latas</th>
                 <th className="text-left p-2">Motivo</th>
+                <th className="text-left p-2">Inventariado</th>
               </tr>
             </thead>
             <tbody>
@@ -477,6 +481,7 @@ function GrupoCard({ grupo }: { grupo: { tipo: Tipo; label: string; items: Row[]
                   <td className="p-2 text-right">{formatNumber(r.latas, 0)}</td>
                   <td className="p-2 text-right font-semibold">{formatNumber(r.totalLatas, 0)}</td>
                   <td className="p-2">{r.motivo}</td>
+                  <td className="p-2">{r.inventariado ? <Badge>Sí</Badge> : <Badge variant="outline">No</Badge>}</td>
                 </tr>
               ))}
             </tbody>
