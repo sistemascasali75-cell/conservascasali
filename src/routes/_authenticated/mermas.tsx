@@ -71,6 +71,7 @@ function RegistrarForm() {
   const [tercero, setTercero] = useState("");
   const [detalle, setDetalle] = useState("");
   const [empaque24, setEmpaque24] = useState(false);
+  const [inventariado, setInventariado] = useState(false);
   const [tamano, setTamano] = useState("");
   const [saving, setSaving] = useState(false);
   const empaqueVal = empaque24 ? 24 : 48;
@@ -167,10 +168,14 @@ function RegistrarForm() {
       };
       if (tipo === "AJUSTE_POSITIVO") params.p_ubic_destino = ubicId;
       else params.p_ubic_origen = ubicId;
-      const { error } = await supabase.rpc("registrar_movimiento", params);
+      const { data: movId, error } = await supabase.rpc("registrar_movimiento", params);
       if (error) throw error;
+      if (inventariado && movId) {
+        const { error: invErr } = await (supabase as any).rpc("set_movimiento_inventariado", { p_id: movId, p_valor: true });
+        if (invErr) throw invErr;
+      }
       toast.success("Movimiento registrado");
-      setTotalLatas(""); setDetalle(""); setMotivo(""); setTieneEtiqueta(false); setUbicId(""); setTercero(""); setEmpaque24(false); setTamano(defaultTamano(envaseSel));
+      setTotalLatas(""); setDetalle(""); setMotivo(""); setTieneEtiqueta(false); setUbicId(""); setTercero(""); setEmpaque24(false); setInventariado(false); setTamano(defaultTamano(envaseSel));
       qc.invalidateQueries();
     } catch (e: any) {
       toast.error(e.message ?? "Error al registrar");
@@ -250,6 +255,13 @@ function RegistrarForm() {
           </label>
         </div>
         <div className="space-y-2">
+          <Label>Inventariado <span className="text-xs text-muted-foreground font-normal ml-2">Formato casilla</span></Label>
+          <label className={`flex items-center gap-2 h-11 px-3 rounded-md border cursor-pointer ${inventariado ? "bg-primary/10 border-primary" : "bg-background"}`}>
+            <Checkbox checked={inventariado} onCheckedChange={(v) => setInventariado(!!v)} />
+            <span className="text-sm">{inventariado ? "Sí, inventariado" : "No inventariado"}</span>
+          </label>
+        </div>
+        <div className="space-y-2">
           <Label>Tamaño <span className="text-xs text-muted-foreground font-normal ml-2">{envaseSel ? `Envase: ${envaseSel}` : "Definido por el envase"}</span></Label>
           <TamanoSelect envase={envaseSel} value={tamano} onChange={setTamano} />
         </div>
@@ -296,6 +308,7 @@ function Historial() {
             <th className="text-left px-3 py-2">Lote / Producto</th>
             <th className="text-right px-3 py-2">Cajas</th>
             <th className="text-left px-3 py-2">Motivo</th>
+            <th className="text-left px-3 py-2">Inventariado</th>
           </tr>
         </thead>
         <tbody>
@@ -312,11 +325,14 @@ function Historial() {
                 </td>
                 <td className="px-3 py-2 text-right font-semibold">{formatNumber(m.cantidad_cajas)}</td>
                 <td className="px-3 py-2 text-xs">{m.motivo ?? "—"}</td>
+                <td className="px-3 py-2">
+                  {m.inventariado ? <Badge>Sí</Badge> : <Badge variant="outline">No</Badge>}
+                </td>
               </tr>
             );
           })}
           {(data?.movs ?? []).length === 0 && (
-            <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">Sin registros</td></tr>
+            <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Sin registros</td></tr>
           )}
         </tbody>
       </table>
