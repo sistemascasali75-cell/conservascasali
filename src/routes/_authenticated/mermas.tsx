@@ -325,11 +325,14 @@ function Historial() {
                 </td>
                 <td className="px-3 py-2 text-right font-semibold">{formatNumber(m.cantidad_cajas)}</td>
                 <td className="px-3 py-2 text-xs">{m.motivo ?? "—"}</td>
+                <td className="px-3 py-2">
+                  {m.inventariado ? <Badge>Sí</Badge> : <Badge variant="outline">No</Badge>}
+                </td>
               </tr>
             );
           })}
           {(data?.movs ?? []).length === 0 && (
-            <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">Sin registros</td></tr>
+            <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Sin registros</td></tr>
           )}
         </tbody>
       </table>
